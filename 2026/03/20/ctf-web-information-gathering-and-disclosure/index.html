@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="Hexo Theme Keep">
+    <meta name="description" content="面向 CTF Web 初学者的信息收集与信息泄露实战入门，覆盖搜索引擎、GitHub、网络空间测绘、子域名、端口、目录、指纹与常见泄露点，并讲清如何把线索转成真正可利用的攻击面。">
+    <meta name="author" content="hsjcha">
+    
+    <title>
+        
+            CTF Web 信息收集与信息泄露实战入门 |
+        
+        HSJCHA LAB
+    </title>
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    
+        <link rel="shortcut icon" href="/images/logo.svg">
+    
+    
+<link rel="stylesheet" href="/font/css/fontawesome.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/regular.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/solid.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/brands.min.css">
+
+    
+    <script class="keep-theme-configurations">
+    const KEEP = window.KEEP || {}
+    KEEP.hexo_config = {"hostname":"hsjcha-lab.xyz","root":"/","language":"zh-CN","path":"search.xml"}
+    KEEP.theme_config = {"base_info":{"primary_color":"#0066cc","title":"HSJCHA LAB","author":"hsjcha","avatar":"/images/avatar.svg","logo":"/images/logo.svg","favicon":"/images/logo.svg"},"menu":{"home":"/","archives":"/archives"},"first_screen":{"enable":false,"background_img":"/images/bg.svg","background_img_dark":"/images/bg.svg","description":"Keep writing and Keep loving.","hitokoto":false},"social_contact":{"enable":true,"links":{"github":"https://github.com/hsjcha","weixin":null,"qq":null,"weibo":null,"zhihu":null,"twitter":null,"x":null,"facebook":null,"email":"admin@hsjcha-lab.xyz"}},"aside":{"enable":true,"position":"left","social":true},"scroll":{"progress_bar":false,"percent":false,"hide_header":true},"home":{"announcement":null,"category":false,"tag":false,"post_datetime":"updated"},"post":{"author_badge":{"enable":true,"level_badge":true,"custom_badge":["One","Two","Three"]},"word_count":{"wordcount":true,"min2read":true},"datetime_format":"YYYY-MM-DD HH:mm:ss","copyright_info":false,"share":false,"reward":{"enable":false,"img_link":null,"text":null,"icon":null}},"code_block":{"tools":{"enable":true,"style":"mac","copy":true,"collapse":true},"highlight_theme":"obsidian","copy":true,"style":"mac"},"toc":{"enable":false,"number":false,"expand_all":false,"init_open":true,"layout":"right"},"website_count":{"busuanzi_count":{"enable":false,"site_uv":false,"site_pv":false,"page_pv":false}},"local_search":{"enable":true,"preload":false},"comment":{"enable":false,"use":"valine","valine":{"appid":null,"appkey":null,"server_urls":null,"placeholder":null},"gitalk":{"github_id":null,"github_admins":null,"repository":null,"client_id":null,"client_secret":null,"proxy":null},"twikoo":{"env_id":null,"region":null,"version":"1.6.39"},"waline":{"server_url":null,"reaction":false,"version":"3.3.2"},"giscus":{"repo":null,"repo_id":null,"category":"Announcements","category_id":null,"reactions_enabled":false},"artalk":{"server":null},"disqus":{"shortname":null}},"rss":{"enable":false},"lazyload":{"enable":false},"cdn":{"enable":false,"provider":"cdnjs"},"pjax":{"enable":false},"footer":{"since":2020,"word_count":false,"site_deploy":{"enable":false,"provider":"github","url":null},"record":{"enable":false,"list":[{"code":null,"link":null}]}},"inject":{"enable":false,"css":[null],"js":[null]},"style":{"dark_mode":{"enable":true,"default":"dark"}},"dark_mode":{"enable":true,"default":"dark"},"social_item":{"github":"https://github.com/hsjcha"},"root":"","source_data":{},"version":"4.2.5"}
+    KEEP.language_ago = {"second":"%s 秒前","minute":"%s 分钟前","hour":"%s 小时前","day":"%s 天前","week":"%s 周前","month":"%s 个月前","year":"%s 年前"}
+    KEEP.language_code_block = {"copy":"复制代码","copied":"已复制","fold":"折叠代码块","folded":"已折叠"}
+    KEEP.language_copy_copyright = {"copy":"复制版权信息","copied":"已复制","title":"原文标题","author":"原文作者","link":"原文链接"}
+  </script>
+</head>
+
+
+<body>
+<div class="progress-bar-container">
+    
+
+    
+</div>
+
+
+
+<main class="page-container border-box">
+    <!-- home first screen  -->
+    
+
+    <!-- page content -->
+    <div class="page-main-content border-box">
+        <div class="page-main-content-top">
+            
+<header class="header-wrapper">
+
+    <div class="border-box header-content">
+        <div class="left flex-start border-box">
+            
+                <a class="logo-image border-box" href="/">
+                    <img src="/images/logo.svg">
+                </a>
+            
+            <a class="site-name border-box" href="/">
+               HSJCHA LAB
+            </a>
+        </div>
+
+        <div class="right border-box">
+            <div class="pc border-box">
+                <ul class="menu-list border-box">
+                    
+                        
+                        <li class="menu-item flex-start border-box">
+                            <a class="menu-text-color border-box" href="/">
+                                
+                                首页
+                                
+                            </a>
+                            
+                        </li>
+                    
+                        
+                        <li class="menu-item flex-start border-box">
+                            <a class="menu-text-color border-box" href="/archives">
+                                
+                                归档
+                                
+                            </a>
+                            
+                        </li>
+                    
+                    
+                        <li class="menu-item search search-popup-trigger">
+                            <i class="menu-text-color fas search fa-search"></i>
+                        </li>
+                    
+                </ul>
+            </div>
+            <div class="mobile border-box flex-start">
+                
+                    <div class="icon-item search search-popup-trigger"><i class="fas fa-search"></i></div>
+                
+                <div class="icon-item menu-bar">
+                    <div class="menu-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list border-box">
+            
+                
+                <li class="drawer-menu-item border-box not-sub-menu">
+                    <label class="drawer-menu-label border-box">
+                        <a class="drawer-menu-text-color left-side flex-start border-box" href="/">
+                            
+                            首页
+                        </a>
+                        
+                    </label>
+                    
+                </li>
+            
+                
+                <li class="drawer-menu-item border-box not-sub-menu">
+                    <label class="drawer-menu-label border-box">
+                        <a class="drawer-menu-text-color left-side flex-start border-box" href="/archives">
+                            
+                            归档
+                        </a>
+                        
+                    </label>
+                    
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+        </div>
+
+        <div class="page-main-content-middle border-box">
+
+            <div class="main-content border-box">
+                
+
+                    
+<div class="fade-in-down-animation">
+    <div class="post-page-container border-box">
+        <div class="post-content-container border-box">
+            
+
+            <div class="post-content-bottom border-box">
+                
+                    <div class="post-title">
+                        CTF Web 信息收集与信息泄露实战入门
+                    </div>
+                
+
+                
+                    <div class="post-header border-box">
+                        
+                            <div class="avatar-box border-box">
+                                <img src="/images/avatar.svg">
+                            </div>
+                        
+                        <div class="info-box">
+                            <div class="author border-box">
+                                <span class="name">hsjcha</span>
+                                
+                                    <span class="author-badge">Lv1</span>
+                                
+                            </div>
+                            <div class="meta-info border-box">
+                                
+
+<div class="post-meta-info-container border-box post">
+    <div class="post-meta-info border-box">
+        
+
+        
+            <span class="meta-info-item post-create-date">
+                <i class="icon fa-solid fa-calendar-plus"></i>&nbsp;
+                <span class="datetime">2026-03-20 21:00:00</span>
+            </span>
+
+            
+                <span class="meta-info-item post-update-date">
+                    <i class="icon fa-solid fa-file-pen"></i>&nbsp;
+                    <span class="datetime" data-updated="Mon Mar 23 2026 19:39:30 GMT+0800">2026-03-23 19:39:30</span>
+                </span>
+            
+        
+
+        
+            <span class="meta-info-item post-category border-box"><i class="icon fas fa-folder"></i>&nbsp;
+                <ul class="post-category-ul">
+                    
+                            <li class="category-item"><a href="/categories/Web%E5%AE%89%E5%85%A8/">Web安全</a></li>
+                        
+                    
+                </ul>
+            </span>
+        
+
+        
+            <span class="post-tag meta-info-item border-box">
+                <ul class="post-tag-ul">
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/Web%E5%AE%89%E5%85%A8/">Web安全</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/CTF/">CTF</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86/">信息收集</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/%E4%BF%A1%E6%81%AF%E6%B3%84%E9%9C%B2/">信息泄露</a></li>
+                        
+                    
+                </ul>
+            </span>
+        
+
+        
+        
+            <span class="meta-info-item post-wordcount">
+                <i class="icon fas fa-file-word"></i>&nbsp;<span>4.8k 字</span>
+            </span>
+        
+        
+            <span class="meta-info-item post-min2read">
+                <i class="icon fas fa-clock"></i>&nbsp;<span>17 分钟</span>
+            </span>
+        
+        
+    </div>
+
+    
+</div>
+
+                            </div>
+                        </div>
+                    </div>
+                
+
+                <div class="post-content keep-markdown-body ">
+                    
+
+                    
+                         <p>很多新手做 <code>CTF Web</code> 时，最容易卡住的点不是“不会漏洞”，而是不知道该从哪里看、先看什么、看到一个线索后又该往哪条路继续走。</p>
+<p>这篇文章就只做一件事：把 <code>信息收集</code> 和 <code>信息泄露</code> 这件事讲透，而且尽量只讲对做题真正有用的部分。你可以把它理解成一条从“看到目标”到“找到入口”的路线图。</p>
+<h2 id="先建立一个做题脑图"><a href="#先建立一个做题脑图" class="headerlink" title="先建立一个做题脑图"></a>先建立一个做题脑图</h2><p>对 <code>CTF Web</code> 来说，信息收集的目标不是“知道得越多越好”，而是尽快回答下面几个问题：</p>
+<ul>
+<li>这个站点还有没有别的入口</li>
+<li>这个入口背后跑的是什么技术栈</li>
+<li>有没有隐藏页面、隐藏参数、隐藏接口</li>
+<li>有没有已经泄露出来的源码、配置、账号、路径、报错信息</li>
+<li>这些线索最终能不能转成漏洞利用点</li>
+</ul>
+<p>如果你一上来就只会盲扫目录、盲打 payload，很容易陷入“看起来很努力，但实际上没有方向”的状态。更高效的方式是按顺序走：</p>
+<ol>
+<li>先做被动信息收集，尽量不与目标产生太多交互。</li>
+<li>再做主动探测，确认入口、端口、目录、指纹和参数。</li>
+<li>最后把拿到的线索映射成具体漏洞方向。</li>
+</ol>
+<p>你可以先记住一句话：</p>
+<p><code>信息收集的本质，是把目标的攻击面从“一个网址”还原成“一整套可分析的系统”。</code></p>
+<h2 id="一条适合新手的-CTF-Web-工作流"><a href="#一条适合新手的-CTF-Web-工作流" class="headerlink" title="一条适合新手的 CTF Web 工作流"></a>一条适合新手的 CTF Web 工作流</h2><p>如果题目只给了一个站点或一个域名，我建议按下面这个顺序推进：</p>
+<ol>
+<li>浏览器访问首页，观察标题、报错、跳转、注释、脚本、请求包。</li>
+<li>看响应头、Cookie、Server、X-Powered-By、状态码、重定向位置。</li>
+<li>查常见泄露点，如 <code>robots.txt</code>、<code>sitemap.xml</code>、<code>phpinfo.php</code>、<code>.git/HEAD</code>、备份文件。</li>
+<li>做目录和文件枚举，找后台、上传点、调试页、接口文档、备份包。</li>
+<li>做指纹识别，确认语言、框架、CMS、中间件、WAF 特征。</li>
+<li>如果题目是域名而不是单站，再做子域名、GitHub、证书透明度、网络空间测绘。</li>
+<li>如果题目给的是 IP、网段或者明显是多主机场景，再考虑端口扫描和 C 段收集。</li>
+</ol>
+<p>这个顺序的核心原因很简单：<code>CTF Web</code> 题往往不是让你“扫得最全”，而是让你尽快定位“最值得打的点”。</p>
+<h2 id="被动信息收集：先把公开线索拿干净"><a href="#被动信息收集：先把公开线索拿干净" class="headerlink" title="被动信息收集：先把公开线索拿干净"></a>被动信息收集：先把公开线索拿干净</h2><p>被动信息收集的好处是快、隐蔽、成本低。在真实攻防里它能减少暴露，在 <code>CTF</code> 里它能帮你少走很多弯路。</p>
+<h3 id="1-搜索引擎不是用来搜文章的，是用来搜入口的"><a href="#1-搜索引擎不是用来搜文章的，是用来搜入口的" class="headerlink" title="1. 搜索引擎不是用来搜文章的，是用来搜入口的"></a>1. 搜索引擎不是用来搜文章的，是用来搜入口的</h3><p>搜索引擎最重要的价值，不是“搜到官网”，而是搜到那些开发者没打算给普通用户看的页面。</p>
+<p>最常用的几个语法：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">site:example.com</span><br><span class="line">site:example.com inurl:admin</span><br><span class="line">site:example.com intitle:login</span><br><span class="line">site:example.com filetype:pdf</span><br><span class="line">site:example.com &quot;index of&quot;</span><br><span class="line">site:example.com &quot;.git&quot;</span><br></pre></td></tr></table></figure>
+
+<p>这些语法在做题里最常拿来找下面几类东西：</p>
+<ul>
+<li>后台登录页</li>
+<li>文件索引目录</li>
+<li>文档、备份、配置文件</li>
+<li>调试页面和测试页面</li>
+<li>敏感关键词关联页面</li>
+</ul>
+<p>做题时要特别留意这几种搜索结果：</p>
+<ul>
+<li>路径名很像后台，如 <code>/admin</code>、<code>/manage</code>、<code>/console</code>、<code>/login</code></li>
+<li>页面标题暴露系统名、版本号、组件名</li>
+<li>搜到 <code>Index of</code>，说明目录浏览可能开着</li>
+<li>搜到 <code>.git</code>、<code>.svn</code>、<code>.bak</code>、<code>.zip</code>、<code>.sql</code>，优先级很高</li>
+<li>搜到 PDF、DOCX、XLSX，可能带路径、邮箱、子域名、用户名</li>
+</ul>
+<p>很多人学搜索语法时容易犯一个误区：只记语法，不知道为什么搜。真正有用的思路是反过来想：</p>
+<ul>
+<li>我想找后台，那就搜 <code>inurl:admin</code></li>
+<li>我想找泄露文件，那就搜 <code>filetype:</code> 和备份后缀</li>
+<li>我想找目录遍历，那就搜 <code>&quot;Index of&quot;</code></li>
+<li>我想找开发痕迹，那就搜系统名、项目名、框架名</li>
+</ul>
+<h3 id="2-GitHub-往往泄露的不是代码本身，而是上下文"><a href="#2-GitHub-往往泄露的不是代码本身，而是上下文" class="headerlink" title="2. GitHub 往往泄露的不是代码本身，而是上下文"></a>2. GitHub 往往泄露的不是代码本身，而是上下文</h3><p>很多 <code>CTF Web</code> 题不会直接把源码给你，但会通过各种方式让你接近源码。<code>GitHub</code> 搜索就是常见入口之一。</p>
+<p>常见搜索思路：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&quot;example.com&quot;</span><br><span class="line">&quot;SECRET_KEY&quot;</span><br><span class="line">&quot;DB_PASSWORD&quot;</span><br><span class="line">&quot;access_key&quot;</span><br><span class="line">&quot;Authorization:&quot;</span><br><span class="line">org:example</span><br><span class="line">user:example</span><br><span class="line">path:/config/</span><br><span class="line">language:php</span><br><span class="line">language:python</span><br></pre></td></tr></table></figure>
+
+<p>在 <code>GitHub</code> 里你最想看到的东西不是“炫技代码”，而是下面这些：</p>
+<ul>
+<li>配置文件</li>
+<li>数据库连接串</li>
+<li>API Key、Token、Secret</li>
+<li>上传路径、静态目录、调试开关</li>
+<li>提交历史里的旧密码、旧接口、旧路径</li>
+<li>代码注释里的接口说明和业务逻辑</li>
+</ul>
+<p>对 <code>CTF Web</code> 来说，<code>GitHub</code> 线索最常带来三类收益：</p>
+<ul>
+<li>确认技术栈，比如 <code>Flask</code>、<code>Laravel</code>、<code>ThinkPHP</code>、<code>Spring Boot</code></li>
+<li>拿到敏感配置，比如数据库账号、JWT 密钥、Redis 地址</li>
+<li>找到隐藏接口和参数名，比如 <code>/api/debug</code>、<code>/upload</code>、<code>role</code>、<code>is_admin</code></li>
+</ul>
+<p>如果你已经拿到了站点名、页面标题、JS 文件名、报错堆栈中的目录名，就更应该去 <code>GitHub</code> 搜这些关键词。很多题目的“线索链”就是这样拼起来的。</p>
+<h3 id="3-网络空间测绘平台适合做“资产扩展”"><a href="#3-网络空间测绘平台适合做“资产扩展”" class="headerlink" title="3. 网络空间测绘平台适合做“资产扩展”"></a>3. 网络空间测绘平台适合做“资产扩展”</h3><p>像 <code>FOFA</code>、<code>Shodan</code>、<code>ZoomEye</code> 这类平台，本质上是在帮你回答一个问题：</p>
+<p><code>这个目标在互联网里，还暴露了哪些同类资产？</code></p>
+<p>常见检索维度包括：</p>
+<ul>
+<li><code>domain</code></li>
+<li><code>ip</code></li>
+<li><code>port</code></li>
+<li><code>title</code></li>
+<li><code>header</code></li>
+<li><code>body</code></li>
+<li><code>banner</code></li>
+<li><code>server</code></li>
+</ul>
+<p>在 <code>CTF Web</code> 中，这类平台最有价值的场景有两个：</p>
+<ul>
+<li>题目给的是域名，你怀疑还有别的子站、别的端口、别的服务</li>
+<li>题目给的是一个登录页或组件页，你想反推出系统版本和部署特征</li>
+</ul>
+<p>比如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">domain=&quot;example.com&quot;</span><br><span class="line">title=&quot;后台管理&quot;</span><br><span class="line">server=&quot;nginx&quot;</span><br><span class="line">body=&quot;upload&quot;</span><br><span class="line">port=&quot;8080&quot;</span><br></pre></td></tr></table></figure>
+
+<p>如果测绘平台显示同域名下还有 <code>8080</code>、<code>7001</code>、<code>8443</code> 等端口，那就说明你的攻击面可能远不止首页那个 <code>80/443</code>。</p>
+<h3 id="4-子域名收集的意义，是把“一个站”扩展成“一片站”"><a href="#4-子域名收集的意义，是把“一个站”扩展成“一片站”" class="headerlink" title="4. 子域名收集的意义，是把“一个站”扩展成“一片站”"></a>4. 子域名收集的意义，是把“一个站”扩展成“一片站”</h3><p>很多新手看到一个目标域名，就默认“所有内容都在这个域名的首页里”。这通常是错的。</p>
+<p>子域名常常意味着：</p>
+<ul>
+<li>不同业务系统</li>
+<li>不同开发团队</li>
+<li>不同权限体系</li>
+<li>不同技术栈</li>
+<li>不同安全成熟度</li>
+</ul>
+<p>举个非常常见的情况：</p>
+<ul>
+<li><code>www.example.com</code> 是正式站</li>
+<li><code>admin.example.com</code> 是后台</li>
+<li><code>api.example.com</code> 是接口</li>
+<li><code>dev.example.com</code> 是测试环境</li>
+<li><code>static.example.com</code> 放前端资源</li>
+</ul>
+<p>对于 <code>CTF Web</code>，子域名里最值得关注的往往不是“数量多”，而是下面这些名字：</p>
+<ul>
+<li><code>admin</code></li>
+<li><code>api</code></li>
+<li><code>dev</code></li>
+<li><code>test</code></li>
+<li><code>uat</code></li>
+<li><code>staging</code></li>
+<li><code>oa</code></li>
+<li><code>git</code></li>
+<li><code>upload</code></li>
+</ul>
+<p>工具上可以知道有 <code>OneForAll</code>、<code>Subfinder</code>、<code>Amass</code> 这一类，但你要明白重点不在于“我会不会某个工具”，而在于：</p>
+<ul>
+<li>发现子域名后要立刻访问</li>
+<li>看是否共用 Cookie 或单点登录</li>
+<li>看是否存在开发环境、未授权接口、调试页面</li>
+<li>看是否能从一个低权限子域影响主站</li>
+</ul>
+<p>如果是纯单站题，这一步的重要性不一定高；如果是多域名、多主机题，这一步往往直接决定你能不能进下一层。</p>
+<h2 id="主动信息收集：开始和目标交互"><a href="#主动信息收集：开始和目标交互" class="headerlink" title="主动信息收集：开始和目标交互"></a>主动信息收集：开始和目标交互</h2><p>被动信息收集只能帮你拿到公开线索，真正做题时，很多关键信息还是得靠你自己发请求、看响应、做枚举。</p>
+<h3 id="1-浏览器和-Burp-是最先该打开的工具"><a href="#1-浏览器和-Burp-是最先该打开的工具" class="headerlink" title="1. 浏览器和 Burp 是最先该打开的工具"></a>1. 浏览器和 Burp 是最先该打开的工具</h3><p>别一上来先跑扫描器。先手工看页面，通常更快。</p>
+<p>你至少要看这几样：</p>
+<ul>
+<li>页面源码里有没有注释、隐藏字段、被注释掉的接口</li>
+<li><code>JS</code> 里有没有接口地址、参数名、鉴权逻辑、路由路径</li>
+<li>网络请求里有没有额外接口，如 <code>/api/user</code>、<code>/graphql</code>、<code>/debug</code></li>
+<li>Cookie 里有没有明显的身份信息，如 <code>role=user</code></li>
+<li>响应头里有没有 <code>Server</code>、<code>X-Powered-By</code>、<code>Set-Cookie</code></li>
+<li>出错时有没有文件绝对路径、版本号、框架报错页</li>
+</ul>
+<p>很多题目不是靠“扫”出来的，而是靠下面这种细节看出来的：</p>
+<ul>
+<li>前端只校验长度，后端没校验</li>
+<li>页面没入口，但 <code>JS</code> 里写了接口</li>
+<li>隐藏参数 <code>debug=1</code></li>
+<li>管理员页面只是前端按钮被隐藏</li>
+<li>同一个接口对不同请求方法响应不同</li>
+</ul>
+<p>如果你能把 <code>Burp Suite</code> 和浏览器开发者工具用熟，很多 <code>CTF Web</code> 题的前期效率会直接翻倍。</p>
+<h3 id="2-目录与敏感文件枚举，是最直接的“找入口”方式"><a href="#2-目录与敏感文件枚举，是最直接的“找入口”方式" class="headerlink" title="2. 目录与敏感文件枚举，是最直接的“找入口”方式"></a>2. 目录与敏感文件枚举，是最直接的“找入口”方式</h3><p>这一部分几乎是所有 <code>Web</code> 题都会碰到的。</p>
+<p>优先检查这些路径：</p>
+<ul>
+<li><code>/robots.txt</code></li>
+<li><code>/sitemap.xml</code></li>
+<li><code>/favicon.ico</code></li>
+<li><code>/admin</code></li>
+<li><code>/login</code></li>
+<li><code>/upload</code></li>
+<li><code>/backup</code></li>
+<li><code>/test</code></li>
+<li><code>/phpinfo.php</code></li>
+<li><code>/.git/HEAD</code></li>
+<li><code>/.svn/entries</code></li>
+</ul>
+<p>再配合目录扫描工具去扩展，比如 <code>dirsearch</code>、<code>gobuster</code>、<code>ffuf</code>。</p>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dirsearch -u http://target/ -i 200,204,301,302,307,401,403</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gobuster <span class="built_in">dir</span> -u http://target/ -w wordlist.txt</span><br></pre></td></tr></table></figure>
+
+<p>做目录扫描时最重要的不是“扫得快”，而是“会判断结果值不值得继续”。</p>
+<p>你要重点盯这几类返回：</p>
+<ul>
+<li><code>200</code>：直接存在</li>
+<li><code>301/302</code>：可能跳到真实路径</li>
+<li><code>401</code>：有鉴权，说明后台可能真实存在</li>
+<li><code>403</code>：被禁止访问，但不代表不存在</li>
+</ul>
+<p>尤其是 <code>403</code>，新手很容易忽略。实际上，<code>403</code> 往往意味着：</p>
+<ul>
+<li>路径是真的</li>
+<li>只是当前请求方式不对</li>
+<li>或者来源、认证、IP、Header 不满足要求</li>
+</ul>
+<h3 id="3-端口扫描解决的是“站点背后还有什么”"><a href="#3-端口扫描解决的是“站点背后还有什么”" class="headerlink" title="3. 端口扫描解决的是“站点背后还有什么”"></a>3. 端口扫描解决的是“站点背后还有什么”</h3><p>如果题目给的是 IP，或者你怀疑目标不是单纯的 <code>80/443</code> 网站，就该看端口。</p>
+<p>端口扫描的目的不是为了记住一堆默认端口，而是为了推断：</p>
+<ul>
+<li>还有没有别的 Web 服务</li>
+<li>有没有后台中间件</li>
+<li>有没有数据库、缓存、消息队列误暴露</li>
+<li>有没有能配合 Web 利用的服务</li>
+</ul>
+<p>最常见的例子：</p>
+<ul>
+<li><code>80/443</code>：HTTP&#x2F;HTTPS</li>
+<li><code>8080</code>：常见备用 Web 端口</li>
+<li><code>7001/7002</code>：WebLogic</li>
+<li><code>8000/8081/8888</code>：测试站、管理台、开发服务常见</li>
+<li><code>3306</code>：MySQL</li>
+<li><code>6379</code>：Redis</li>
+<li><code>9200</code>：Elasticsearch</li>
+</ul>
+<p>在 <code>CTF Web</code> 里，看到额外端口时要立刻想三个问题：</p>
+<ol>
+<li>这是不是另一个入口。</li>
+<li>这是不是能提供版本和组件信息。</li>
+<li>这是不是能反过来帮助我利用主站。</li>
+</ol>
+<p><code>Nmap</code> 是最常见的入门工具：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmap -sV -Pn target</span><br></pre></td></tr></table></figure>
+
+<p>如果只是普通单站题，没有多端口暗示，不一定要重型扫全端口；但只要题目给的是 IP，端口扫描通常值得做。</p>
+<h3 id="4-指纹识别是在猜“这个站会栽在哪类坑里”"><a href="#4-指纹识别是在猜“这个站会栽在哪类坑里”" class="headerlink" title="4. 指纹识别是在猜“这个站会栽在哪类坑里”"></a>4. 指纹识别是在猜“这个站会栽在哪类坑里”</h3><p>指纹识别的价值不只是知道“它是 WordPress”或者“它跑了 PHP”，而是把漏洞方向缩小。</p>
+<p>你想识别的东西包括：</p>
+<ul>
+<li>Web 服务器，如 <code>Nginx</code>、<code>Apache</code></li>
+<li>后端语言，如 <code>PHP</code>、<code>Python</code>、<code>Java</code></li>
+<li>框架，如 <code>Flask</code>、<code>Django</code>、<code>Spring Boot</code></li>
+<li>CMS，如 <code>WordPress</code>、<code>Drupal</code></li>
+<li>前端框架，如 <code>Vue</code>、<code>React</code></li>
+<li>WAF 或 CDN 特征</li>
+</ul>
+<p>常见工具：</p>
+<ul>
+<li><code>WhatWeb</code></li>
+<li><code>Wappalyzer</code></li>
+<li><code>Nmap -sV</code></li>
+</ul>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">whatweb -a 3 http://target/</span><br></pre></td></tr></table></figure>
+
+<p>如果识别结果告诉你是：</p>
+<ul>
+<li><code>PHP + Apache</code>，就多想文件包含、源码泄露、弱类型、上传点</li>
+<li><code>Python Flask</code>，就多想模板注入、调试模式、签名伪造</li>
+<li><code>Java Spring</code>，就多想接口暴露、Actuator、反序列化、SpEL</li>
+<li><code>WordPress</code>，就多看插件、主题、后台路径、备份包</li>
+</ul>
+<p><code>指纹</code> 不直接等于 <code>漏洞</code>，但它能帮你少走很多错误方向。</p>
+<h3 id="5-C-段收集什么时候才重要"><a href="#5-C-段收集什么时候才重要" class="headerlink" title="5. C 段收集什么时候才重要"></a>5. C 段收集什么时候才重要</h3><p>原始材料里有 <code>C 段收集</code>，这个知识点本身没问题，但对多数单站 <code>CTF Web</code> 题来说不是最高优先级。</p>
+<p>它更适合下面这些场景：</p>
+<ul>
+<li>题目给的是一个网段</li>
+<li>靶场是内网渗透联动场景</li>
+<li>你需要从一台入口机继续发现同网段资产</li>
+<li>题目明显是“多主机、多服务”设计</li>
+</ul>
+<p>如果只是一个普通网页题，先去找参数、接口、目录、泄露，比直接扫整个网段更有效。</p>
+<h2 id="信息泄露：很多题目的真正入口"><a href="#信息泄露：很多题目的真正入口" class="headerlink" title="信息泄露：很多题目的真正入口"></a>信息泄露：很多题目的真正入口</h2><p>对新手来说，“信息泄露”最容易被低估。很多人以为它只是“顺手看一眼”，但实际上不少题目的突破口就是泄露本身。</p>
+<h3 id="1-测试页面和调试页面"><a href="#1-测试页面和调试页面" class="headerlink" title="1. 测试页面和调试页面"></a>1. 测试页面和调试页面</h3><p>优先检查：</p>
+<ul>
+<li><code>/test.php</code></li>
+<li><code>/info.php</code></li>
+<li><code>/phpinfo.php</code></li>
+<li><code>/debug</code></li>
+<li><code>/dev</code></li>
+<li><code>/install</code></li>
+<li><code>/setup</code></li>
+</ul>
+<p>其中 <code>phpinfo()</code> 页面特别危险，因为它可能直接告诉你：</p>
+<ul>
+<li>PHP 版本</li>
+<li>网站根目录</li>
+<li>Session 保存路径</li>
+<li>已加载模块</li>
+<li>服务器环境变量</li>
+<li>临时目录和上传目录</li>
+</ul>
+<p>这些信息在题目里经常可以继续转化成：</p>
+<ul>
+<li>文件包含利用</li>
+<li>上传绕过</li>
+<li>Session 相关利用</li>
+<li>已知组件漏洞定位</li>
+</ul>
+<h3 id="2-源码泄露和版本库泄露"><a href="#2-源码泄露和版本库泄露" class="headerlink" title="2. 源码泄露和版本库泄露"></a>2. 源码泄露和版本库泄露</h3><p>这部分优先级非常高。</p>
+<p>你要检查的对象包括：</p>
+<ul>
+<li><code>/.git/HEAD</code></li>
+<li><code>/.git/config</code></li>
+<li><code>/.svn/entries</code></li>
+<li>网站备份压缩包</li>
+<li>历史源码包</li>
+<li>误传的仓库目录</li>
+</ul>
+<p>常见后缀：</p>
+<ul>
+<li><code>.zip</code></li>
+<li><code>.rar</code></li>
+<li><code>.7z</code></li>
+<li><code>.tar.gz</code></li>
+<li><code>.bak</code></li>
+<li><code>.old</code></li>
+<li><code>.swp</code></li>
+<li><code>.tmp</code></li>
+</ul>
+<p>为什么源码泄露这么重要？因为它能直接回答很多做题里最难的问题：</p>
+<ul>
+<li>参数到底怎么校验</li>
+<li>后端到底查了什么数据库</li>
+<li>登录逻辑到底怎么判断权限</li>
+<li>文件上传白名单和黑名单是什么</li>
+<li>模板渲染点在哪里</li>
+<li>有哪些你在前端没看到的隐藏路由</li>
+</ul>
+<p>一句话总结：</p>
+<p><code>拿到源码后，很多 Web 题就从“猜”变成了“读”。</code></p>
+<h3 id="3-配置文件泄露"><a href="#3-配置文件泄露" class="headerlink" title="3. 配置文件泄露"></a>3. 配置文件泄露</h3><p>配置文件里常见的高价值信息包括：</p>
+<ul>
+<li>数据库账号密码</li>
+<li>Redis、MongoDB、Elasticsearch 地址</li>
+<li>JWT 密钥</li>
+<li>Session 配置</li>
+<li>第三方接口 Token</li>
+<li>Debug 开关</li>
+</ul>
+<p>常见目标文件：</p>
+<ul>
+<li><code>.env</code></li>
+<li><code>config.php</code></li>
+<li><code>application.properties</code></li>
+<li><code>application.yml</code></li>
+<li><code>web.config</code></li>
+<li><code>nginx.conf</code></li>
+<li><code>.htaccess</code></li>
+<li><code>settings.py</code></li>
+<li><code>config.yaml</code></li>
+</ul>
+<p>在 <code>CTF</code> 里，这类文件的价值经常不止是“拿凭证”，还可能让你直接发现：</p>
+<ul>
+<li>文件上传目录</li>
+<li>模板目录</li>
+<li>数据库表名</li>
+<li>管理员用户名</li>
+<li>内网服务地址</li>
+</ul>
+<h3 id="4-日志、临时文件、编辑器残留"><a href="#4-日志、临时文件、编辑器残留" class="headerlink" title="4. 日志、临时文件、编辑器残留"></a>4. 日志、临时文件、编辑器残留</h3><p>这类东西经常被忽略，但命中率不低。</p>
+<p>例如：</p>
+<ul>
+<li>日志文件可能有报错堆栈和 SQL 语句</li>
+<li><code>.swp</code> 可能有编辑中的源码片段</li>
+<li><code>.DS_Store</code> 可能暴露目录结构</li>
+<li><code>*.log</code> 可能暴露后台接口或用户行为</li>
+<li>备份的旧文件可能没有新版本的权限校验</li>
+</ul>
+<p>如果一个题看起来“主逻辑防得挺严”，那旧文件、残留文件、临时文件往往就是更容易下手的地方。</p>
+<h3 id="5-前端泄露其实非常常见"><a href="#5-前端泄露其实非常常见" class="headerlink" title="5. 前端泄露其实非常常见"></a>5. 前端泄露其实非常常见</h3><p>前端本身也是信息泄露的重要来源。</p>
+<p>重点看：</p>
+<ul>
+<li><code>HTML</code> 注释</li>
+<li>隐藏字段</li>
+<li>被注释掉的按钮或路由</li>
+<li><code>JS</code> 中硬编码的接口地址</li>
+<li><code>source map</code> 文件，如 <code>app.js.map</code></li>
+<li>前端写死的用户名、路径、Token、调试开关</li>
+</ul>
+<p>很多题目会把线索藏在下面这种位置：</p>
+<ul>
+<li><code>fetch(&quot;/api/admin/list&quot;)</code></li>
+<li><code>isAdmin === true</code></li>
+<li><code>role: &quot;guest&quot;</code></li>
+<li><code>debug: false</code></li>
+<li><code>/static/backup.zip</code></li>
+</ul>
+<p>对新手来说，一个很重要的转变是：</p>
+<p><code>不要把前端当成“样式层”，要把前端当成“情报层”。</code></p>
+<h2 id="怎么把线索转成漏洞方向"><a href="#怎么把线索转成漏洞方向" class="headerlink" title="怎么把线索转成漏洞方向"></a>怎么把线索转成漏洞方向</h2><p>真正决定你能不能做出来的，不是看到了多少信息，而是你能不能把信息和漏洞类型对应起来。</p>
+<p>下面这张映射关系很值得背熟：</p>
+<ul>
+<li><p>看到后台路径、管理接口、权限字段。<br>想到未授权访问、越权、弱口令、参数篡改。</p>
+</li>
+<li><p>看到上传目录、文件后缀校验、图片处理逻辑。<br>想到文件上传、解析漏洞、后缀绕过、路径穿越。</p>
+</li>
+<li><p>看到报错堆栈、SQL 报错、模板报错。<br>想到 SQL 注入、模板注入、路径泄露、源码路径定位。</p>
+</li>
+<li><p>看到 <code>.git</code>、备份包、源码片段。<br>想到读代码找鉴权缺陷、隐藏接口、硬编码密钥。</p>
+</li>
+<li><p>看到框架和版本。<br>想到已知漏洞、默认路径、默认口令、组件特征利用。</p>
+</li>
+<li><p>看到 API 文档、<code>swagger</code>、<code>graphql</code>、调试接口。<br>想到未授权接口、批量枚举、参数污染、业务逻辑缺陷。</p>
+</li>
+<li><p>看到 <code>phpinfo()</code>、环境变量、绝对路径。<br>想到文件包含、上传临时文件、Session 文件、日志文件利用。</p>
+</li>
+</ul>
+<p>换句话说，信息收集不是漏洞利用之前“可有可无的准备动作”，它本身就在不断缩小漏洞范围。</p>
+<h2 id="一套对新手很有用的检查清单"><a href="#一套对新手很有用的检查清单" class="headerlink" title="一套对新手很有用的检查清单"></a>一套对新手很有用的检查清单</h2><p>如果你做一题时总不知道下一步该干什么，可以按这个清单过一遍：</p>
+<h3 id="第一步：先看页面本身"><a href="#第一步：先看页面本身" class="headerlink" title="第一步：先看页面本身"></a>第一步：先看页面本身</h3><ul>
+<li>看标题、注释、源码、隐藏字段</li>
+<li>抓包看请求头、响应头、Cookie、状态码</li>
+<li>看是否有跳转、报错、版本号、路径泄露</li>
+</ul>
+<h3 id="第二步：找入口"><a href="#第二步：找入口" class="headerlink" title="第二步：找入口"></a>第二步：找入口</h3><ul>
+<li>访问 <code>robots.txt</code></li>
+<li>访问 <code>sitemap.xml</code></li>
+<li>访问常见后台和调试路径</li>
+<li>扫描目录、文件、备份后缀</li>
+</ul>
+<h3 id="第三步：找技术栈"><a href="#第三步：找技术栈" class="headerlink" title="第三步：找技术栈"></a>第三步：找技术栈</h3><ul>
+<li>看 <code>Server</code> 和 <code>X-Powered-By</code></li>
+<li>跑 <code>WhatWeb</code> 或浏览器插件</li>
+<li>从页面特征、文件扩展名、报错页判断框架</li>
+</ul>
+<h3 id="第四步：扩展攻击面"><a href="#第四步：扩展攻击面" class="headerlink" title="第四步：扩展攻击面"></a>第四步：扩展攻击面</h3><ul>
+<li>如果是域名，查子域名</li>
+<li>如果是 IP，扫端口</li>
+<li>如果是多主机题，考虑 C 段和旁站</li>
+<li>如果有项目名，去查 GitHub</li>
+</ul>
+<h3 id="第五步：盯泄露"><a href="#第五步：盯泄露" class="headerlink" title="第五步：盯泄露"></a>第五步：盯泄露</h3><ul>
+<li>看 <code>.git</code>、<code>.svn</code>、备份压缩包</li>
+<li>看测试页、<code>phpinfo.php</code>、调试页</li>
+<li>看配置文件、日志文件、临时文件</li>
+<li>看 <code>JS</code>、<code>source map</code>、接口文档</li>
+</ul>
+<h3 id="第六步：把线索转利用"><a href="#第六步：把线索转利用" class="headerlink" title="第六步：把线索转利用"></a>第六步：把线索转利用</h3><ul>
+<li>有路径就想目录穿越、文件包含、未授权</li>
+<li>有账号密码就想登录、复用、越权</li>
+<li>有源码就读鉴权、读过滤、读上传、读模板</li>
+<li>有版本就查默认特征和已知漏洞方向</li>
+</ul>
+<h2 id="新手最常见的几个误区"><a href="#新手最常见的几个误区" class="headerlink" title="新手最常见的几个误区"></a>新手最常见的几个误区</h2><ul>
+<li>只扫目录，不看返回内容。很多真正的线索在响应体里，不在状态码里。</li>
+<li>看到 <code>403</code> 就放弃。<code>403</code> 常常意味着路径真实存在。</li>
+<li>只盯首页，不看 <code>JS</code> 和接口请求。很多题目关键入口在前端脚本里。</li>
+<li>只想漏洞名，不想业务链。很多题不是“某个高危漏洞”，而是“一个小泄露加一个小逻辑缺陷”。</li>
+<li>不会读源码。拿到源码后如果还只会继续扫，那就浪费了最有价值的线索。</li>
+</ul>
+<h2 id="最后把这件事想简单一点"><a href="#最后把这件事想简单一点" class="headerlink" title="最后把这件事想简单一点"></a>最后把这件事想简单一点</h2><p>对 <code>CTF Web</code> 来说，信息收集并不神秘，它只是一个不断回答问题的过程：</p>
+<ul>
+<li>目标还有什么我没看到</li>
+<li>这些东西藏在哪里</li>
+<li>它们说明后端在干什么</li>
+<li>哪些信息已经不小心泄露出来了</li>
+<li>这些泄露能不能帮我打到真正的漏洞点</li>
+</ul>
+<p>当你开始习惯用这条思路做题后，你会发现很多原来看起来“无从下手”的题，其实并不是没漏洞，而是你还没有把攻击面展开。</p>
+<p>如果你是刚入门，建议你先把这篇文章里的流程反复练熟。因为对绝大多数 <code>CTF Web</code> 题来说，先把信息收集做对，后面的利用往往就会顺很多。</p>
+
+                    
+                </div>
+
+                
+
+                <div class="post-bottom-tags-and-share border-box">
+                    <div>
+                        
+                            <ul class="post-tags-box border-box">
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/Web%E5%AE%89%E5%85%A8/">Web安全</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/CTF/">CTF</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86/">信息收集</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/%E4%BF%A1%E6%81%AF%E6%B3%84%E9%9C%B2/">信息泄露</a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </div>
+                    <div>
+                        
+                    </div>
+                </div>
+
+                
+
+                
+                    <div class="post-nav border-box">
+                        
+                        
+                            <div class="next-post">
+                                <a class="next"
+                                   rel="next"
+                                   href="/2026/03/19/ctf-web-basics-quick-reference/"
+                                   title="CTF Web 入门基础速查"
+                                >
+                                    <span class="title flex-center">
+                                        <span class="post-nav-title-item text-ellipsis">CTF Web 入门基础速查</span>
+                                        <span class="post-nav-item">下一篇</span>
+                                    </span>
+                                    <span class="right arrow-icon flex-center">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </span>
+                                </a>
+                            </div>
+                        
+                    </div>
+                
+
+                
+                    
+
+
+
+
+
+
+                
+            </div>
+        </div>
+
+        
+    </div>
+</div>
+
+
+                
+            </div>
+        </div>
+
+        <div class="page-main-content-bottom border-box">
+            
+<footer class="footer border-box">
+    <div class="copyright-info info-item">
+    &copy;&nbsp;<span>2020</span>&nbsp;-&nbsp;2026
+    
+            &nbsp;<i class="fas fa-heart icon-animate"></i>&nbsp;&nbsp;<a href="/">hsjcha</a>
+        
+    </div>
+
+    <div class="theme-info info-item">
+        由&nbsp;<a target="_blank" href="https://hexo.io">Hexo</a>&nbsp;驱动&nbsp;&&nbsp;主题&nbsp;<a class="keep-version" target="_blank" href="https://github.com/XPoet/hexo-theme-keep">Keep</a>
+    </div>
+
+    
+
+    
+
+    
+</footer>
+
+        </div>
+    </div>
+
+    <!-- post tools -->
+    
+        <div class="post-tools right-toc">
+            <div class="post-tools-container border-box">
+    <ul class="post-tools-list border-box">
+        <!-- PC encrypt again -->
+        
+
+        <!-- PC TOC show toggle -->
+        
+
+        <!-- PC go comment -->
+        
+
+        <!-- PC full screen -->
+        <li class="tools-item flex-center full-screen">
+            <i class="fa-solid fa-expand"></i>
+        </li>
+    </ul>
+</div>
+
+        </div>
+    
+
+    <!-- side tools -->
+    <div class="side-tools">
+        <div class="side-tools-container border-box ">
+    <ul class="side-tools-list side-tools-show-handle border-box">
+        <li class="tools-item tool-font-adjust-plus flex-center">
+            <i class="fas fa-search-plus"></i>
+        </li>
+
+        <li class="tools-item tool-font-adjust-minus flex-center">
+            <i class="fas fa-search-minus"></i>
+        </li>
+
+        <!-- toggle mode -->
+        
+            <li class="tools-item tool-toggle-theme-mode flex-center">
+                <i class="fas fa-moon"></i>
+            </li>
+        
+
+        <!-- rss -->
+        
+
+        <!-- to bottom -->
+        <li class="tools-item tool-scroll-to-bottom flex-center">
+            <i class="fas fa-arrow-down"></i>
+        </li>
+    </ul>
+
+    <ul class="exposed-tools-list border-box">
+        
+
+        
+
+        <li class="tools-item tool-toggle-show flex-center">
+            <i class="fas fa-cog fa-spin"></i>
+        </li>
+
+        <li class="tools-item tool-scroll-to-top flex-center show-arrow">
+            <i class="arrow fas fa-arrow-up"></i>
+            <span class="percent"></span>
+        </li>
+    </ul>
+</div>
+
+    </div>
+
+    <!-- image mask -->
+    <div class="zoom-in-image-mask">
+    <img class="zoom-in-image">
+</div>
+
+
+    <!-- local search -->
+    
+        <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-input-field-pre">
+            <i class="fas fa-keyboard"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="close-popup-btn">
+                <i class="fas fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fas fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+
+    <!-- tablet toc -->
+    
+</main>
+
+
+
+
+
+<!-- common js -->
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/header-shrink.js"></script>
+
+<script src="/js/back2top.js"></script>
+
+<script src="/js/toggle-theme.js"></script>
+
+<script src="/js/code-block.js"></script>
+
+<script src="/js/main.js"></script>
+
+<script src="/js/libs/anime.min.js"></script>
+
+
+<!-- local search -->
+
+    
+<script src="/js/local-search.js"></script>
+
+
+
+<!-- lazyload -->
+
+
+<div class="">
+    <!-- home page -->
+    
+
+    <!-- post page -->
+    
+        <!-- post-helper -->
+        
+<script src="/js/post/post-helper.js"></script>
+
+
+        <!-- toc -->
+        
+
+        <!-- copyright-info -->
+        
+
+        <!-- share -->
+        
+    
+
+    <!-- categories page -->
+    
+
+    <!-- links page -->
+    
+
+    <!-- photos page -->
+    
+
+    <!-- tools page -->
+    
+</div>
+
+<!-- mermaid -->
+
+
+<!-- pjax -->
+
+
+
+</body>
+</html>
