@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="Hexo Theme Keep">
+    <meta name="description" content="面向 CTF Web 初学者的防御视角入门，讲清防火墙、WAF、IDS、IPS 与蜜罐分别在防什么、看什么、能做什么，以及它们会如何影响做题思路。">
+    <meta name="author" content="hsjcha">
+    
+    <title>
+        
+            CTF Web 防御视角 |
+        
+        HSJCHA LAB
+    </title>
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    
+        <link rel="shortcut icon" href="/images/logo.svg">
+    
+    
+<link rel="stylesheet" href="/font/css/fontawesome.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/regular.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/solid.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/brands.min.css">
+
+    
+    <script class="keep-theme-configurations">
+    const KEEP = window.KEEP || {}
+    KEEP.hexo_config = {"hostname":"hsjcha-lab.xyz","root":"/","language":"zh-CN","path":"search.xml"}
+    KEEP.theme_config = {"base_info":{"primary_color":"#0066cc","title":"HSJCHA LAB","author":"hsjcha","avatar":"/images/avatar.svg","logo":"/images/logo.svg","favicon":"/images/logo.svg"},"menu":{"home":"/","archives":"/archives"},"first_screen":{"enable":false,"background_img":"/images/bg.svg","background_img_dark":"/images/bg.svg","description":"Keep writing and Keep loving.","hitokoto":false},"social_contact":{"enable":true,"links":{"github":"https://github.com/hsjcha","weixin":null,"qq":null,"weibo":null,"zhihu":null,"twitter":null,"x":null,"facebook":null,"email":"admin@hsjcha-lab.xyz"}},"aside":{"enable":true,"position":"left","social":true},"scroll":{"progress_bar":false,"percent":false,"hide_header":true},"home":{"announcement":null,"category":false,"tag":false,"post_datetime":"updated"},"post":{"author_badge":{"enable":true,"level_badge":true,"custom_badge":["One","Two","Three"]},"word_count":{"wordcount":true,"min2read":true},"datetime_format":"YYYY-MM-DD HH:mm:ss","copyright_info":false,"share":false,"reward":{"enable":false,"img_link":null,"text":null,"icon":null}},"code_block":{"tools":{"enable":true,"style":"mac","copy":true,"collapse":true},"highlight_theme":"obsidian","copy":true,"style":"mac"},"toc":{"enable":false,"number":false,"expand_all":false,"init_open":true,"layout":"right"},"website_count":{"busuanzi_count":{"enable":false,"site_uv":false,"site_pv":false,"page_pv":false}},"local_search":{"enable":true,"preload":false},"comment":{"enable":false,"use":"valine","valine":{"appid":null,"appkey":null,"server_urls":null,"placeholder":null},"gitalk":{"github_id":null,"github_admins":null,"repository":null,"client_id":null,"client_secret":null,"proxy":null},"twikoo":{"env_id":null,"region":null,"version":"1.6.39"},"waline":{"server_url":null,"reaction":false,"version":"3.3.2"},"giscus":{"repo":null,"repo_id":null,"category":"Announcements","category_id":null,"reactions_enabled":false},"artalk":{"server":null},"disqus":{"shortname":null}},"rss":{"enable":false},"lazyload":{"enable":false},"cdn":{"enable":false,"provider":"cdnjs"},"pjax":{"enable":false},"footer":{"since":2020,"word_count":false,"site_deploy":{"enable":false,"provider":"github","url":null},"record":{"enable":false,"list":[{"code":null,"link":null}]}},"inject":{"enable":false,"css":[null],"js":[null]},"style":{"dark_mode":{"enable":true,"default":"dark"}},"dark_mode":{"enable":true,"default":"dark"},"social_item":{"github":"https://github.com/hsjcha"},"root":"","source_data":{},"version":"4.2.5"}
+    KEEP.language_ago = {"second":"%s 秒前","minute":"%s 分钟前","hour":"%s 小时前","day":"%s 天前","week":"%s 周前","month":"%s 个月前","year":"%s 年前"}
+    KEEP.language_code_block = {"copy":"复制代码","copied":"已复制","fold":"折叠代码块","folded":"已折叠"}
+    KEEP.language_copy_copyright = {"copy":"复制版权信息","copied":"已复制","title":"原文标题","author":"原文作者","link":"原文链接"}
+  </script>
+</head>
+
+
+<body>
+<div class="progress-bar-container">
+    
+
+    
+</div>
+
+
+
+<main class="page-container border-box">
+    <!-- home first screen  -->
+    
+
+    <!-- page content -->
+    <div class="page-main-content border-box">
+        <div class="page-main-content-top">
+            
+<header class="header-wrapper">
+
+    <div class="border-box header-content">
+        <div class="left flex-start border-box">
+            
+                <a class="logo-image border-box" href="/">
+                    <img src="/images/logo.svg">
+                </a>
+            
+            <a class="site-name border-box" href="/">
+               HSJCHA LAB
+            </a>
+        </div>
+
+        <div class="right border-box">
+            <div class="pc border-box">
+                <ul class="menu-list border-box">
+                    
+                        
+                        <li class="menu-item flex-start border-box">
+                            <a class="menu-text-color border-box" href="/">
+                                
+                                首页
+                                
+                            </a>
+                            
+                        </li>
+                    
+                        
+                        <li class="menu-item flex-start border-box">
+                            <a class="menu-text-color border-box" href="/archives">
+                                
+                                归档
+                                
+                            </a>
+                            
+                        </li>
+                    
+                    
+                        <li class="menu-item search search-popup-trigger">
+                            <i class="menu-text-color fas search fa-search"></i>
+                        </li>
+                    
+                </ul>
+            </div>
+            <div class="mobile border-box flex-start">
+                
+                    <div class="icon-item search search-popup-trigger"><i class="fas fa-search"></i></div>
+                
+                <div class="icon-item menu-bar">
+                    <div class="menu-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list border-box">
+            
+                
+                <li class="drawer-menu-item border-box not-sub-menu">
+                    <label class="drawer-menu-label border-box">
+                        <a class="drawer-menu-text-color left-side flex-start border-box" href="/">
+                            
+                            首页
+                        </a>
+                        
+                    </label>
+                    
+                </li>
+            
+                
+                <li class="drawer-menu-item border-box not-sub-menu">
+                    <label class="drawer-menu-label border-box">
+                        <a class="drawer-menu-text-color left-side flex-start border-box" href="/archives">
+                            
+                            归档
+                        </a>
+                        
+                    </label>
+                    
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+        </div>
+
+        <div class="page-main-content-middle border-box">
+
+            <div class="main-content border-box">
+                
+
+                    
+<div class="fade-in-down-animation">
+    <div class="post-page-container border-box">
+        <div class="post-content-container border-box">
+            
+
+            <div class="post-content-bottom border-box">
+                
+                    <div class="post-title">
+                        CTF Web 防御视角
+                    </div>
+                
+
+                
+                    <div class="post-header border-box">
+                        
+                            <div class="avatar-box border-box">
+                                <img src="/images/avatar.svg">
+                            </div>
+                        
+                        <div class="info-box">
+                            <div class="author border-box">
+                                <span class="name">hsjcha</span>
+                                
+                                    <span class="author-badge">Lv1</span>
+                                
+                            </div>
+                            <div class="meta-info border-box">
+                                
+
+<div class="post-meta-info-container border-box post">
+    <div class="post-meta-info border-box">
+        
+
+        
+            <span class="meta-info-item post-create-date">
+                <i class="icon fa-solid fa-calendar-plus"></i>&nbsp;
+                <span class="datetime">2026-03-24 15:10:00</span>
+            </span>
+
+            
+                <span class="meta-info-item post-update-date">
+                    <i class="icon fa-solid fa-file-pen"></i>&nbsp;
+                    <span class="datetime" data-updated="Tue Mar 24 2026 15:08:07 GMT+0800">2026-03-24 15:08:07</span>
+                </span>
+            
+        
+
+        
+            <span class="meta-info-item post-category border-box"><i class="icon fas fa-folder"></i>&nbsp;
+                <ul class="post-category-ul">
+                    
+                            <li class="category-item"><a href="/categories/Web%E5%AE%89%E5%85%A8/">Web安全</a></li>
+                        
+                    
+                </ul>
+            </span>
+        
+
+        
+            <span class="post-tag meta-info-item border-box">
+                <ul class="post-tag-ul">
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/Web%E5%AE%89%E5%85%A8/">Web安全</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/CTF/">CTF</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/%E9%98%B2%E5%BE%A1/">防御</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/WAF/">WAF</a></li>
+                        
+                    
+                </ul>
+            </span>
+        
+
+        
+        
+            <span class="meta-info-item post-wordcount">
+                <i class="icon fas fa-file-word"></i>&nbsp;<span>4k 字</span>
+            </span>
+        
+        
+            <span class="meta-info-item post-min2read">
+                <i class="icon fas fa-clock"></i>&nbsp;<span>13 分钟</span>
+            </span>
+        
+        
+    </div>
+
+    
+</div>
+
+                            </div>
+                        </div>
+                    </div>
+                
+
+                <div class="post-content keep-markdown-body ">
+                    
+
+                    
+                         <p>很多人学 <code>CTF Web</code> 时，会把精力几乎全部放在漏洞和利用上，但做题做到一定阶段后，你很快就会发现另一件事同样重要：</p>
+<p><code>你不仅要知道题目哪里有洞，还要知道自己为什么会被拦。</code></p>
+<p>这篇文章想讲的，就是 <code>CTF Web</code> 里最常见的几类防御思路：<code>防火墙</code>、<code>WAF</code>、<code>IDS</code>、<code>IPS</code>、<code>蜜罐</code>。我不会把它写成设备介绍，而是尽量讲成一篇小白能看懂、做题时也能用上的“防御视角地图”。</p>
+<p>你看完后，至少应该能搞清楚这些问题：</p>
+<ul>
+<li>防火墙和 <code>WAF</code> 到底有什么区别</li>
+<li><code>IDS</code> 和 <code>IPS</code> 为什么总被放在一起讲</li>
+<li>蜜罐为什么不是单纯的“拦截设备”</li>
+<li>为什么有的请求是 <code>403</code>，有的请求直接被断开，有的请求只是被记录</li>
+<li>从 <code>CTF Web</code> 的角度看，这些防御机制分别会怎么影响做题</li>
+</ul>
+<h2 id="先记住一个总原则"><a href="#先记住一个总原则" class="headerlink" title="先记住一个总原则"></a>先记住一个总原则</h2><p><code>防御的核心不是让系统绝对安全，而是提高攻击成本。</code></p>
+<p>这个观念非常重要。</p>
+<p>真实世界里没有哪一层防御能保证“永不失守”，所以防守方通常做的是分层防御：</p>
+<ul>
+<li>边界先挡一层</li>
+<li>应用层再看一层</li>
+<li>主机和日志再监控一层</li>
+<li>真拦不住时，至少要能发现、记录、隔离、止损</li>
+</ul>
+<p>从 <code>CTF Web</code> 的角度看，理解这件事的意义在于：</p>
+<ul>
+<li>你能更快判断自己当前遇到的是哪一层限制</li>
+<li>你不会把所有异常都误判成“题目坏了”</li>
+<li>你能把“请求失败”的现象，映射回背后的防御机制</li>
+</ul>
+<h2 id="一张最该先建立的脑图"><a href="#一张最该先建立的脑图" class="headerlink" title="一张最该先建立的脑图"></a>一张最该先建立的脑图</h2><p>如果把常见防御按“主要看哪一层、主要干什么”来粗略理解，可以先这么记：</p>
+<ul>
+<li><code>防火墙</code>：更偏网络边界，主要按 IP、端口、协议放行或拦截</li>
+<li><code>WAF</code>：更偏 Web 应用层，主要看 HTTP 请求内容是不是像攻击</li>
+<li><code>IDS</code>：更偏检测和告警，发现异常但未必直接拦</li>
+<li><code>IPS</code>：更偏实时阻断，检测到异常后会直接动手拦</li>
+<li><code>蜜罐</code>：更偏诱捕和取证，目标不是正常提供业务，而是吸引攻击者暴露行为</li>
+</ul>
+<p>只要这张图先立住，后面很多概念就不会混。</p>
+<h2 id="防火墙：先挡“谁能过来”"><a href="#防火墙：先挡“谁能过来”" class="headerlink" title="防火墙：先挡“谁能过来”"></a>防火墙：先挡“谁能过来”</h2><p>最传统的防御设备通常先从防火墙开始理解。</p>
+<p>它最核心的工作不是看某个请求是不是 <code>SQL 注入</code> 或 <code>XSS</code>，而是先看：</p>
+<ul>
+<li>请求从哪来</li>
+<li>要访问哪个地址</li>
+<li>要打哪个端口</li>
+<li>用的是什么协议</li>
+</ul>
+<p>所以防火墙更像是网络边界上的门卫。</p>
+<p>它最常处理的问题包括：</p>
+<ul>
+<li>某个 IP 能不能访问内网服务</li>
+<li>某个端口要不要开放</li>
+<li>某种协议该不该放行</li>
+<li>外部网络和内部网络之间怎么隔离</li>
+</ul>
+<h3 id="为什么防火墙对-Web-也重要"><a href="#为什么防火墙对-Web-也重要" class="headerlink" title="为什么防火墙对 Web 也重要"></a>为什么防火墙对 Web 也重要</h3><p>很多新手会觉得，既然我们学的是 <code>Web</code>，那防火墙好像离得很远。其实不是。</p>
+<p>因为一个 <code>Web</code> 站点能不能被打，首先要看相关端口和路径是否真的暴露在外。</p>
+<p>例如：</p>
+<ul>
+<li><code>80/443</code> 开着，说明 Web 服务对外可见</li>
+<li>后台管理端口没开放，很多攻击面自然就没了</li>
+<li>数据库端口如果只允许内网访问，外部攻击者就很难直接碰到数据库</li>
+</ul>
+<p>所以从做题角度看，防火墙虽然不一定直接“识别 payload”，但它决定了：</p>
+<ul>
+<li>你到底能不能连上目标</li>
+<li>你能看到哪些服务</li>
+<li>哪些横向路径一开始就被切断了</li>
+</ul>
+<h3 id="防火墙在-CTF-Web-里常见的体现"><a href="#防火墙在-CTF-Web-里常见的体现" class="headerlink" title="防火墙在 CTF Web 里常见的体现"></a>防火墙在 CTF Web 里常见的体现</h3><p>你可能会遇到这些现象：</p>
+<ul>
+<li>某个端口根本连不上</li>
+<li>某个服务只有内网能访问</li>
+<li>某个路径在本地通，但从外部不通</li>
+<li>某些请求被静默丢弃，连明确报错都没有</li>
+</ul>
+<p>这些时候就要想到，问题可能不在应用逻辑，而在更前面的网络边界控制。</p>
+<h2 id="WAF：专门盯-HTTP-请求"><a href="#WAF：专门盯-HTTP-请求" class="headerlink" title="WAF：专门盯 HTTP 请求"></a>WAF：专门盯 HTTP 请求</h2><p><code>WAF</code> 全称是 <code>Web Application Firewall</code>，也就是 Web 应用防火墙。</p>
+<p>如果说普通防火墙更关心“这个连接该不该过”，那 <code>WAF</code> 更关心的是：</p>
+<p><code>这个 HTTP 请求看起来像不像攻击。</code></p>
+<p>它常看的东西包括：</p>
+<ul>
+<li>URL</li>
+<li>Query 参数</li>
+<li>POST 数据</li>
+<li>Cookie</li>
+<li>Header</li>
+<li>请求频率</li>
+<li>特定危险关键字</li>
+<li>某些已知攻击特征</li>
+</ul>
+<p>所以 <code>WAF</code> 和传统防火墙最大的区别，可以简单概括成一句话：</p>
+<p><code>防火墙主要看网络层和传输层，WAF 主要盯应用层。</code></p>
+<h3 id="为什么-WAF-对-CTF-Web-特别重要"><a href="#为什么-WAF-对-CTF-Web-特别重要" class="headerlink" title="为什么 WAF 对 CTF Web 特别重要"></a>为什么 WAF 对 CTF Web 特别重要</h3><p>因为你做题时真正构造的很多东西，都在 <code>WAF</code> 的观察范围内。</p>
+<p>比如：</p>
+<ul>
+<li>参数里出现危险函数名</li>
+<li>请求里出现典型注入特征</li>
+<li>某些上传内容像脚本</li>
+<li>某些请求头或路径像扫描器行为</li>
+</ul>
+<p>这也是为什么很多人做题时会遇到这种情况：</p>
+<ul>
+<li>页面能正常打开</li>
+<li>但一发特定请求就 <code>403</code></li>
+<li>或者直接出现拦截页</li>
+<li>或者某些请求突然响应长度异常</li>
+</ul>
+<p>这时首先想到的就该是：<code>是不是 WAF 在看我的请求内容。</code></p>
+<h3 id="WAF-常见部署方式，理解到什么程度就够了"><a href="#WAF-常见部署方式，理解到什么程度就够了" class="headerlink" title="WAF 常见部署方式，理解到什么程度就够了"></a>WAF 常见部署方式，理解到什么程度就够了</h3><p>对初学者来说，最值得记的只有两件事。</p>
+<p>第一，<code>WAF</code> 往往是在 Web 服务器前面。</p>
+<p>也就是说，请求通常不是直接到达真实应用，而是先经过一层检查。</p>
+<p>第二，<code>WAF</code> 有的是真正在流量路径上，有的只是旁路看流量。</p>
+<p>这会直接影响它能做的事：</p>
+<ul>
+<li>在直路上，它可以真正拦截</li>
+<li>在旁路上，它更像监控和告警</li>
+</ul>
+<p>所以如果你看到的是“请求被挡住”，那更像前者；如果只是事后被记录或告警，那更像后者。</p>
+<h3 id="从现象上，怎么怀疑自己碰到了-WAF"><a href="#从现象上，怎么怀疑自己碰到了-WAF" class="headerlink" title="从现象上，怎么怀疑自己碰到了 WAF"></a>从现象上，怎么怀疑自己碰到了 WAF</h3><p>下面这些信号很常见：</p>
+<ul>
+<li>某些关键词一出现就 <code>403</code></li>
+<li>正常浏览没事，扫描器一跑就被拦</li>
+<li>响应页里直接写着拦截、校验、风险、访问异常</li>
+<li>访问速度或频率一高，马上出现限制</li>
+<li>某些请求返回固定模板，长度和普通页面明显不同</li>
+</ul>
+<p>这类现象在 <code>CTF Web</code> 里很常见。理解 <code>WAF</code> 的价值，不是为了背设备原理，而是为了让你意识到：</p>
+<p><code>不是所有失败，都是漏洞方向错了；有时候是应用层防御先把你拦下来了。</code></p>
+<h2 id="IDS：负责发现异常，但不一定亲自拦"><a href="#IDS：负责发现异常，但不一定亲自拦" class="headerlink" title="IDS：负责发现异常，但不一定亲自拦"></a>IDS：负责发现异常，但不一定亲自拦</h2><p><code>IDS</code> 是 <code>Intrusion Detection System</code>，也就是入侵检测系统。</p>
+<p>它的关键词是：<code>检测</code>。</p>
+<p>它主要做的事是：</p>
+<ul>
+<li>收集流量、日志、系统行为</li>
+<li>分析这些数据里有没有异常</li>
+<li>一旦发现可疑行为，发出告警、记录事件</li>
+</ul>
+<p>它更像安全团队的报警器，而不是路口的铁门。</p>
+<h3 id="为什么-IDS-常被说成“旁路设备”"><a href="#为什么-IDS-常被说成“旁路设备”" class="headerlink" title="为什么 IDS 常被说成“旁路设备”"></a>为什么 IDS 常被说成“旁路设备”</h3><p>因为很多 <code>IDS</code> 不是直接卡在业务流量正中间，而是拿流量副本、系统日志或者主机行为数据来分析。</p>
+<p>这样做的好处是：</p>
+<ul>
+<li>不容易影响正常业务</li>
+<li>部署压力相对小</li>
+<li>能持续监控</li>
+</ul>
+<p>但缺点也很明显：</p>
+<ul>
+<li>它可能知道你在攻击</li>
+<li>但它不一定能当场把你拦下来</li>
+</ul>
+<p>所以从最朴素的角度看，<code>IDS</code> 常见结果是：</p>
+<ul>
+<li>告警</li>
+<li>记录</li>
+<li>提醒管理员</li>
+</ul>
+<p>而不是直接阻断。</p>
+<h3 id="IDS-在-CTF-Web-里意味着什么"><a href="#IDS-在-CTF-Web-里意味着什么" class="headerlink" title="IDS 在 CTF Web 里意味着什么"></a>IDS 在 CTF Web 里意味着什么</h3><p>在纯题目环境里，你未必真的“看得见”一套完整 <code>IDS</code>，但你要理解这种思路，因为很多题会借它引出一些现象：</p>
+<ul>
+<li>某些异常操作虽然成功了，但后面触发了日志审计</li>
+<li>某些题目会给你日志文件，反过来让你从防守视角判断攻击行为</li>
+<li>有些靶场环境里，攻击不是被立即阻断，而是在事后留下明显痕迹</li>
+</ul>
+<p>这对做题最大的帮助是：你开始会重视 <code>日志</code>、<code>访问记录</code>、<code>行为痕迹</code> 这些东西，而不是只盯 payload 本身。</p>
+<h2 id="IPS：不仅看见你，还会立刻拦你"><a href="#IPS：不仅看见你，还会立刻拦你" class="headerlink" title="IPS：不仅看见你，还会立刻拦你"></a>IPS：不仅看见你，还会立刻拦你</h2><p><code>IPS</code> 是 <code>Intrusion Prevention System</code>，也就是入侵防御系统。</p>
+<p>它和 <code>IDS</code> 的关系很好记：</p>
+<ul>
+<li><code>IDS</code> 偏“发现问题并告警”</li>
+<li><code>IPS</code> 偏“发现问题后直接阻断”</li>
+</ul>
+<p>也可以把它理解成：</p>
+<p><code>IPS = 更主动、离实战拦截更近的 IDS。</code></p>
+<h3 id="IPS-为什么更像“带阻断能力的检测”"><a href="#IPS-为什么更像“带阻断能力的检测”" class="headerlink" title="IPS 为什么更像“带阻断能力的检测”"></a>IPS 为什么更像“带阻断能力的检测”</h3><p>因为它不仅要分析流量或行为，还要有权限在检测到异常时立刻采取动作，比如：</p>
+<ul>
+<li>丢弃数据包</li>
+<li>中断连接</li>
+<li>阻止某类请求继续发送</li>
+<li>暂时封掉攻击源</li>
+</ul>
+<p>这也是它和 <code>IDS</code> 的关键区别。</p>
+<h3 id="IPS-的代价也更高"><a href="#IPS-的代价也更高" class="headerlink" title="IPS 的代价也更高"></a>IPS 的代价也更高</h3><p>因为 <code>IPS</code> 站在真正的流量路径上，所以它虽然更能拦，但也更容易带来问题：</p>
+<ul>
+<li>性能压力更大</li>
+<li>出故障时影响更直接</li>
+<li>误报时会把正常请求一起拦掉</li>
+</ul>
+<p>这也是为什么现实部署里，<code>IPS</code> 的误报会比 <code>IDS</code> 更让人头疼。<code>IDS</code> 误报，最多是告警吵；<code>IPS</code> 误报，可能直接影响业务。</p>
+<h3 id="从做题角度，什么现象更像-IPS"><a href="#从做题角度，什么现象更像-IPS" class="headerlink" title="从做题角度，什么现象更像 IPS"></a>从做题角度，什么现象更像 IPS</h3><p>如果你遇到这些情况，可以往 <code>IPS</code> 的方向想：</p>
+<ul>
+<li>某些请求发出去后连接直接被切</li>
+<li>多次尝试后源地址临时不可用</li>
+<li>同类请求持续被主动重置</li>
+<li>不是单纯返回 <code>403</code>，而是通信层面被强行终止</li>
+</ul>
+<p>这通常说明问题已经不只是“应用返回一个错误页”了，而是更靠前、更主动的防御在工作。</p>
+<h2 id="蜜罐：它不是为了正常服务，而是为了诱捕你"><a href="#蜜罐：它不是为了正常服务，而是为了诱捕你" class="headerlink" title="蜜罐：它不是为了正常服务，而是为了诱捕你"></a>蜜罐：它不是为了正常服务，而是为了诱捕你</h2><p><code>蜜罐</code> 是这几类防御里最容易被误解的一种。</p>
+<p>很多新手第一次听到蜜罐，会以为它也是一种“更强的拦截器”。其实不是。</p>
+<p>蜜罐的目标通常不是保护真实业务本身，而是：</p>
+<ul>
+<li>吸引攻击者去碰它</li>
+<li>记录攻击者的行为</li>
+<li>拿到攻击样本、路径、工具和特征</li>
+<li>延缓攻击过程，增加攻击成本</li>
+</ul>
+<p>所以它更像一个“诱饵系统”。</p>
+<h3 id="为什么蜜罐很适合做主动防御"><a href="#为什么蜜罐很适合做主动防御" class="headerlink" title="为什么蜜罐很适合做主动防御"></a>为什么蜜罐很适合做主动防御</h3><p>因为它不是等业务系统先挨打再补救，而是主动布一个看起来有价值的目标，等攻击者自己暴露出来。</p>
+<p>它的价值主要体现在：</p>
+<ul>
+<li>误报率低</li>
+<li>捕获到的数据往往很有价值</li>
+<li>能帮助溯源和分析攻击手法</li>
+</ul>
+<p>但它也不是没有风险。如果蜜罐设计不好、隔离不好，它自己反而可能被利用成跳板。</p>
+<h3 id="蜜罐对-CTF-Web-的启发是什么"><a href="#蜜罐对-CTF-Web-的启发是什么" class="headerlink" title="蜜罐对 CTF Web 的启发是什么"></a>蜜罐对 CTF Web 的启发是什么</h3><p>即使在比赛里你不一定真的部署蜜罐，理解它依然很有用。因为它会改变你看待“目标系统”的方式。</p>
+<p>很多题目会故意放一些特别显眼的入口，比如：</p>
+<ul>
+<li>看起来过于明显的后台</li>
+<li>看起来像测试页的假目标</li>
+<li>很容易扫到但打不出结果的可疑服务</li>
+</ul>
+<p>这不一定就是蜜罐，但这种设计思路和蜜罐很像：<code>故意把攻击者往某个方向引。</code></p>
+<p>所以做题时也要保留一点警惕：</p>
+<ul>
+<li>太明显的入口，未必就是最终突破口</li>
+<li>某些东西被你发现，本身可能就是题目希望你先看见的</li>
+</ul>
+<h2 id="被动防御和主动防御，该怎么区分"><a href="#被动防御和主动防御，该怎么区分" class="headerlink" title="被动防御和主动防御，该怎么区分"></a>被动防御和主动防御，该怎么区分</h2><h3 id="被动防御"><a href="#被动防御" class="headerlink" title="被动防御"></a>被动防御</h3><p>更偏“发现、记录、过滤、修复”。</p>
+<p>典型代表：</p>
+<ul>
+<li>防火墙</li>
+<li><code>WAF</code></li>
+<li><code>IDS</code></li>
+</ul>
+<p>它们通常建立在已有规则、已知模式、已有策略上，重点是降低风险和减少损害。</p>
+<h3 id="主动防御"><a href="#主动防御" class="headerlink" title="主动防御"></a>主动防御</h3><p>更偏“提前布置、主动诱导、实时阻断、尽早止损”。</p>
+<p>典型代表：</p>
+<ul>
+<li><code>IPS</code></li>
+<li>蜜罐</li>
+</ul>
+<p>它们更强调在攻击尚未造成更大破坏前，把攻击尽快拦住、转移、限制或者暴露出来。</p>
+<p>不过你也别把这个区分看得太死。现实里很多系统是混合的，检测、阻断、诱捕、日志、告警会一起出现。</p>
+<h2 id="在-CTF-Web-里，这些防御分别会怎么影响你"><a href="#在-CTF-Web-里，这些防御分别会怎么影响你" class="headerlink" title="在 CTF Web 里，这些防御分别会怎么影响你"></a>在 CTF Web 里，这些防御分别会怎么影响你</h2><p>这一部分是整篇最值得带走的。</p>
+<p>如果你做题时遇到异常，可以先这样判断：</p>
+<h3 id="1-根本连不上，先想边界和端口"><a href="#1-根本连不上，先想边界和端口" class="headerlink" title="1. 根本连不上，先想边界和端口"></a>1. 根本连不上，先想边界和端口</h3><p>可能的方向：</p>
+<ul>
+<li>网络防火墙</li>
+<li>安全组</li>
+<li>端口未开放</li>
+<li>内外网隔离</li>
+</ul>
+<h3 id="2-页面能开，但某些-payload-一发就被拦"><a href="#2-页面能开，但某些-payload-一发就被拦" class="headerlink" title="2. 页面能开，但某些 payload 一发就被拦"></a>2. 页面能开，但某些 payload 一发就被拦</h3><p>优先想到：</p>
+<ul>
+<li><code>WAF</code></li>
+<li>参数内容过滤</li>
+<li>特征规则命中</li>
+</ul>
+<h3 id="3-请求不是返回错误页，而是连接被中断"><a href="#3-请求不是返回错误页，而是连接被中断" class="headerlink" title="3. 请求不是返回错误页，而是连接被中断"></a>3. 请求不是返回错误页，而是连接被中断</h3><p>优先想到：</p>
+<ul>
+<li><code>IPS</code></li>
+<li>更激进的前置拦截</li>
+</ul>
+<h3 id="4-题目给了日志、审计、访问记录"><a href="#4-题目给了日志、审计、访问记录" class="headerlink" title="4. 题目给了日志、审计、访问记录"></a>4. 题目给了日志、审计、访问记录</h3><p>优先想到：</p>
+<ul>
+<li><code>IDS</code></li>
+<li>主机侧或网络侧检测</li>
+<li>让你从痕迹反推攻击行为</li>
+</ul>
+<h3 id="5-目标过于“诱人”但打起来不对劲"><a href="#5-目标过于“诱人”但打起来不对劲" class="headerlink" title="5. 目标过于“诱人”但打起来不对劲"></a>5. 目标过于“诱人”但打起来不对劲</h3><p>优先想到：</p>
+<ul>
+<li>诱导入口</li>
+<li>伪目标</li>
+<li>接近蜜罐思路的题目设计</li>
+</ul>
+<p>只要你能把现象和这几个机制对上号，做题时就不会总是陷入“怎么又没回显”的慌乱状态。</p>
+<h2 id="新手最容易混淆的几个点"><a href="#新手最容易混淆的几个点" class="headerlink" title="新手最容易混淆的几个点"></a>新手最容易混淆的几个点</h2><ul>
+<li>把防火墙和 <code>WAF</code> 当成一个东西。前者更偏网络边界，后者更偏 HTTP 应用层。</li>
+<li>把 <code>IDS</code> 和 <code>IPS</code> 当成一个东西。前者偏发现和告警，后者偏实时阻断。</li>
+<li>以为蜜罐就是“更强的防火墙”。其实蜜罐的核心是诱骗和取证。</li>
+<li>一遇到 <code>403</code> 就只想到权限问题。很多时候也可能是 <code>WAF</code> 或应用层策略。</li>
+<li>一遇到连接断开就以为服务挂了。也可能是更主动的拦截设备在丢流量或切连接。</li>
+</ul>
+<h2 id="一套够用的防御视角检查清单"><a href="#一套够用的防御视角检查清单" class="headerlink" title="一套够用的防御视角检查清单"></a>一套够用的防御视角检查清单</h2><p>如果你在 <code>CTF Web</code> 里碰到请求异常、访问异常或结果异常，可以按这个顺序快速判断：</p>
+<ol>
+<li>我是根本连不上，还是连得上但请求被拦。</li>
+<li>如果根本连不上，是不是端口、网段、边界策略的问题。</li>
+<li>如果页面能访问，但特定请求被拦，是不是应用层过滤或 <code>WAF</code>。</li>
+<li>如果连接被重置或直接断开，是不是更主动的前置阻断。</li>
+<li>如果题目给了日志或审计信息，是不是在考我用防守视角还原攻击过程。</li>
+<li>如果某个入口显得过于明显，是不是题目在故意引导我先走这条路。</li>
+</ol>
+<h2 id="为什么学攻击的人也必须懂一点防御"><a href="#为什么学攻击的人也必须懂一点防御" class="headerlink" title="为什么学攻击的人也必须懂一点防御"></a>为什么学攻击的人也必须懂一点防御</h2><p>因为很多时候，理解防御不是为了“转岗做蓝队”，而是为了让你的攻击判断更准确。</p>
+<p>你知道一层防御在看什么，就会更明白：</p>
+<ul>
+<li>哪些请求容易被发现</li>
+<li>哪些异常是网络层问题，哪些是应用层问题</li>
+<li>为什么同一个 payload 在两个环境里表现不一样</li>
+<li>为什么有时漏洞明明存在，但利用就是不顺</li>
+</ul>
+<p>这也是 <code>CTF Web</code> 很重要的一种成长：从“只会打洞”，慢慢变成“能同时理解攻击链和防御链”。</p>
+<h2 id="最后把它串起来"><a href="#最后把它串起来" class="headerlink" title="最后把它串起来"></a>最后把它串起来</h2><p>如果把这篇文章压缩成最短的一句话，那就是：</p>
+<p><code>防火墙决定你能不能靠近目标，WAF 决定你的 HTTP 请求像不像攻击，IDS 决定你的异常会不会被发现，IPS 决定你会不会被当场拦下，蜜罐决定你有没有可能被故意引到一个假目标上。</code></p>
+<p>对 <code>CTF Web</code> 初学者来说，只要先把这条主线建立起来，很多以前看起来杂乱的安全名词就会突然变得很清楚。你之后再去学具体漏洞、审计代码、看拦截现象时，脑子里就会有一张更完整的地图。</p>
+
+                    
+                </div>
+
+                
+
+                <div class="post-bottom-tags-and-share border-box">
+                    <div>
+                        
+                            <ul class="post-tags-box border-box">
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/Web%E5%AE%89%E5%85%A8/">Web安全</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/CTF/">CTF</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/%E9%98%B2%E5%BE%A1/">防御</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/WAF/">WAF</a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </div>
+                    <div>
+                        
+                    </div>
+                </div>
+
+                
+
+                
+                    <div class="post-nav border-box">
+                        
+                        
+                            <div class="next-post">
+                                <a class="next"
+                                   rel="next"
+                                   href="/2026/03/22/ctf-web-webshell-principles-and-ctf-practice/"
+                                   title="CTF Web 中的 Webshell"
+                                >
+                                    <span class="title flex-center">
+                                        <span class="post-nav-title-item text-ellipsis">CTF Web 中的 Webshell</span>
+                                        <span class="post-nav-item">下一篇</span>
+                                    </span>
+                                    <span class="right arrow-icon flex-center">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </span>
+                                </a>
+                            </div>
+                        
+                    </div>
+                
+
+                
+                    
+
+
+
+
+
+
+                
+            </div>
+        </div>
+
+        
+    </div>
+</div>
+
+
+                
+            </div>
+        </div>
+
+        <div class="page-main-content-bottom border-box">
+            
+<footer class="footer border-box">
+    <div class="copyright-info info-item">
+    &copy;&nbsp;<span>2020</span>&nbsp;-&nbsp;2026
+    
+            &nbsp;<i class="fas fa-heart icon-animate"></i>&nbsp;&nbsp;<a href="/">hsjcha</a>
+        
+    </div>
+
+    <div class="theme-info info-item">
+        由&nbsp;<a target="_blank" href="https://hexo.io">Hexo</a>&nbsp;驱动&nbsp;&&nbsp;主题&nbsp;<a class="keep-version" target="_blank" href="https://github.com/XPoet/hexo-theme-keep">Keep</a>
+    </div>
+
+    
+
+    
+
+    
+</footer>
+
+        </div>
+    </div>
+
+    <!-- post tools -->
+    
+        <div class="post-tools right-toc">
+            <div class="post-tools-container border-box">
+    <ul class="post-tools-list border-box">
+        <!-- PC encrypt again -->
+        
+
+        <!-- PC TOC show toggle -->
+        
+
+        <!-- PC go comment -->
+        
+
+        <!-- PC full screen -->
+        <li class="tools-item flex-center full-screen">
+            <i class="fa-solid fa-expand"></i>
+        </li>
+    </ul>
+</div>
+
+        </div>
+    
+
+    <!-- side tools -->
+    <div class="side-tools">
+        <div class="side-tools-container border-box ">
+    <ul class="side-tools-list side-tools-show-handle border-box">
+        <li class="tools-item tool-font-adjust-plus flex-center">
+            <i class="fas fa-search-plus"></i>
+        </li>
+
+        <li class="tools-item tool-font-adjust-minus flex-center">
+            <i class="fas fa-search-minus"></i>
+        </li>
+
+        <!-- toggle mode -->
+        
+            <li class="tools-item tool-toggle-theme-mode flex-center">
+                <i class="fas fa-moon"></i>
+            </li>
+        
+
+        <!-- rss -->
+        
+
+        <!-- to bottom -->
+        <li class="tools-item tool-scroll-to-bottom flex-center">
+            <i class="fas fa-arrow-down"></i>
+        </li>
+    </ul>
+
+    <ul class="exposed-tools-list border-box">
+        
+
+        
+
+        <li class="tools-item tool-toggle-show flex-center">
+            <i class="fas fa-cog fa-spin"></i>
+        </li>
+
+        <li class="tools-item tool-scroll-to-top flex-center show-arrow">
+            <i class="arrow fas fa-arrow-up"></i>
+            <span class="percent"></span>
+        </li>
+    </ul>
+</div>
+
+    </div>
+
+    <!-- image mask -->
+    <div class="zoom-in-image-mask">
+    <img class="zoom-in-image">
+</div>
+
+
+    <!-- local search -->
+    
+        <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-input-field-pre">
+            <i class="fas fa-keyboard"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="close-popup-btn">
+                <i class="fas fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fas fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+
+    <!-- tablet toc -->
+    
+</main>
+
+
+
+
+
+<!-- common js -->
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/header-shrink.js"></script>
+
+<script src="/js/back2top.js"></script>
+
+<script src="/js/toggle-theme.js"></script>
+
+<script src="/js/code-block.js"></script>
+
+<script src="/js/main.js"></script>
+
+<script src="/js/libs/anime.min.js"></script>
+
+
+<!-- local search -->
+
+    
+<script src="/js/local-search.js"></script>
+
+
+
+<!-- lazyload -->
+
+
+<div class="">
+    <!-- home page -->
+    
+
+    <!-- post page -->
+    
+        <!-- post-helper -->
+        
+<script src="/js/post/post-helper.js"></script>
+
+
+        <!-- toc -->
+        
+
+        <!-- copyright-info -->
+        
+
+        <!-- share -->
+        
+    
+
+    <!-- categories page -->
+    
+
+    <!-- links page -->
+    
+
+    <!-- photos page -->
+    
+
+    <!-- tools page -->
+    
+</div>
+
+<!-- mermaid -->
+
+
+<!-- pjax -->
+
+
+
+</body>
+</html>
