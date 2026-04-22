@@ -13,6 +13,7 @@
 
 html,
 body {
+  background-color: #0d1f19;
   background:
     radial-gradient(circle at top left, rgba(31, 199, 182, 0.18), transparent 34%),
     radial-gradient(circle at top right, rgba(79, 214, 160, 0.12), transparent 26%);
@@ -186,10 +187,30 @@ body::after {
 }
 
 .light-mode body {
+  background-color: #10241d;
   background:
-    radial-gradient(circle at top left, rgba(31, 199, 182, 0.12), transparent 35%),
-    radial-gradient(circle at top right, rgba(79, 214, 160, 0.1), transparent 24%),
-    linear-gradient(180deg, #f4fbff 0%, #edf5ff 100%);
+    radial-gradient(circle at top left, rgba(31, 199, 182, 0.14), transparent 35%),
+    radial-gradient(circle at top right, rgba(79, 214, 160, 0.12), transparent 24%),
+    linear-gradient(180deg, #0c1d18 0%, #0d2019 48%, #10241d 100%);
+}
+
+.light-mode html {
+  background-color: #10241d;
+  background:
+    radial-gradient(circle at top left, rgba(31, 199, 182, 0.14), transparent 35%),
+    radial-gradient(circle at top right, rgba(79, 214, 160, 0.12), transparent 24%),
+    linear-gradient(180deg, #0c1d18 0%, #0d2019 48%, #10241d 100%);
+}
+
+.light-mode {
+  --background-color-1: #0c1d18;
+  --background-color-2: #10241d;
+  --background-color-3: #153128;
+  --content-background-color: rgba(11, 32, 25, 0.82);
+  --header-transparent-background-1: rgba(12, 29, 24, 0.42);
+  --header-transparent-background-2: rgba(12, 29, 24, 0.6);
+  --shadow-color: rgba(2, 12, 10, 0.22);
+  --shadow-hover-color: rgba(2, 12, 10, 0.3);
 }
 
 .page-container {
@@ -201,6 +222,13 @@ body::after {
 .page-main-content {
   position: relative;
   z-index: 1;
+  background: transparent !important;
+}
+
+.page-main-content-middle,
+.page-main-content-bottom,
+.main-content {
+  background: transparent !important;
 }
 
 .light-mode .site-dynamic-bg .bg-noise {
@@ -279,7 +307,21 @@ body::after {
 }
 
 .light-mode .first-screen-container::after {
-  background: linear-gradient(180deg, rgba(244, 251, 255, 0), rgba(244, 251, 255, 0.92));
+  background: linear-gradient(180deg, rgba(12, 29, 24, 0), rgba(16, 36, 29, 0.96));
+}
+
+.light-mode .page-container,
+.light-mode .page-main-content,
+.light-mode .page-main-content-middle,
+.light-mode .page-main-content-bottom,
+.light-mode .main-content,
+.light-mode .home-content-container,
+.light-mode .archives-container,
+.light-mode .category-archive-container,
+.light-mode .tag-archive-container,
+.light-mode .page-template-container,
+.light-mode .page-template-bottom {
+  background: transparent !important;
 }
 
 .first-screen-content {
@@ -367,7 +409,38 @@ body::after {
 .light-mode .post-container,
 .light-mode .page-template-bottom .page-content,
 .light-mode .page-template-bottom .friends-link-list {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(11, 32, 25, 0.82);
+  border-color: rgba(116, 214, 171, 0.12);
+  box-shadow: 0 24px 70px rgba(2, 12, 10, 0.26);
+}
+
+.light-mode .archive-item .post-item,
+.light-mode .friends-link-item,
+.light-mode .footer-chip {
+  background: rgba(15, 40, 31, 0.62);
+  border-color: rgba(116, 214, 171, 0.12);
+}
+
+.light-mode .archives-container,
+.light-mode .category-archive-container,
+.light-mode .tag-archive-container,
+.light-mode .post-container,
+.light-mode .website-announcement,
+.light-mode .home-showcase,
+.light-mode .home-post-item {
+  color: rgba(232, 245, 238, 0.9);
+}
+
+.light-mode .archive-item .archive-year,
+.light-mode .archive-item .post-item .post-title,
+.light-mode .home-post-title a,
+.light-mode .home-post-content,
+.light-mode .post-meta-info,
+.light-mode .post-meta-info a,
+.light-mode .post-meta-info span,
+.light-mode .website-announcement .announcement,
+.light-mode .website-announcement .announcement p {
+  color: rgba(232, 245, 238, 0.88);
 }
 
 .home-showcase {
@@ -596,18 +669,52 @@ body::after {
 
 .light-mode .page-template-bottom .friends-link-list,
 .light-mode .page-template-bottom .page-content {
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(11, 32, 25, 0.82);
+  border: 1px solid rgba(116, 214, 171, 0.12);
   box-shadow: 0 24px 70px rgba(4, 14, 28, 0.12);
   backdrop-filter: blur(14px);
 }
 
 .light-mode .page-template-container.has-page-cover .page-template-top {
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(11, 32, 25, 0.82);
+  border: 1px solid rgba(116, 214, 171, 0.12);
   border-bottom: none;
   box-shadow: 0 24px 70px rgba(4, 14, 28, 0.12);
   backdrop-filter: blur(14px);
+}
+
+.light-mode .page-template-bottom .page-content,
+.light-mode .page-template-bottom .page-content p,
+.light-mode .page-template-bottom .page-content li,
+.light-mode .page-template-bottom .page-content h1,
+.light-mode .page-template-bottom .page-content h2,
+.light-mode .page-template-bottom .page-content h3,
+.light-mode .page-template-bottom .page-content h4,
+.light-mode .page-template-bottom .page-content h5,
+.light-mode .page-template-bottom .page-content h6 {
+  color: rgba(232, 245, 238, 0.9);
+}
+
+.light-mode .page-template-bottom .page-content a,
+.light-mode .page-template-bottom .page-content strong,
+.light-mode .page-template-bottom .page-content code,
+.light-mode .page-template-bottom .page-content blockquote {
+  color: rgba(236, 248, 242, 0.92);
+}
+
+.light-mode .page-template-container.has-page-cover .page-cover-title {
+  background: rgba(8, 24, 19, 0.56);
+  border-color: rgba(116, 214, 171, 0.14);
+  color: rgba(240, 248, 244, 0.92);
+}
+
+.light-mode .friends-link-list .link-type-title .type-name,
+.light-mode .friends-link-item .details .name {
+  color: rgba(236, 248, 242, 0.92);
+}
+
+.light-mode .friends-link-item .details .desc {
+  color: rgba(210, 231, 220, 0.72);
 }
 
 .dark-mode .home-post-item {
