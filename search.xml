@@ -1,6 +1,319 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>CTF Web 防御视角</title>
+    <url>/2026/03/24/ctf-web-defense-basics-for-ctf-web/</url>
+    <content><![CDATA[<p>很多人学 <code>CTF Web</code> 时，会把精力几乎全部放在漏洞和利用上，但做题做到一定阶段后，你很快就会发现另一件事同样重要：</p>
+<p><code>你不仅要知道题目哪里有洞，还要知道自己为什么会被拦。</code></p>
+<p>这篇文章想讲的，就是 <code>CTF Web</code> 里最常见的几类防御思路：<code>防火墙</code>、<code>WAF</code>、<code>IDS</code>、<code>IPS</code>、<code>蜜罐</code>。我不会把它写成设备介绍，而是尽量讲成一篇小白能看懂、做题时也能用上的“防御视角地图”。</p>
+<p>你看完后，至少应该能搞清楚这些问题：</p>
+<ul>
+<li>防火墙和 <code>WAF</code> 到底有什么区别</li>
+<li><code>IDS</code> 和 <code>IPS</code> 为什么总被放在一起讲</li>
+<li>蜜罐为什么不是单纯的“拦截设备”</li>
+<li>为什么有的请求是 <code>403</code>，有的请求直接被断开，有的请求只是被记录</li>
+<li>从 <code>CTF Web</code> 的角度看，这些防御机制分别会怎么影响做题</li>
+</ul>
+<h2 id="先记住一个总原则"><a href="#先记住一个总原则" class="headerlink" title="先记住一个总原则"></a>先记住一个总原则</h2><p><code>防御的核心不是让系统绝对安全，而是提高攻击成本。</code></p>
+<p>这个观念非常重要。</p>
+<p>真实世界里没有哪一层防御能保证“永不失守”，所以防守方通常做的是分层防御：</p>
+<ul>
+<li>边界先挡一层</li>
+<li>应用层再看一层</li>
+<li>主机和日志再监控一层</li>
+<li>真拦不住时，至少要能发现、记录、隔离、止损</li>
+</ul>
+<p>从 <code>CTF Web</code> 的角度看，理解这件事的意义在于：</p>
+<ul>
+<li>你能更快判断自己当前遇到的是哪一层限制</li>
+<li>你不会把所有异常都误判成“题目坏了”</li>
+<li>你能把“请求失败”的现象，映射回背后的防御机制</li>
+</ul>
+<h2 id="一张最该先建立的脑图"><a href="#一张最该先建立的脑图" class="headerlink" title="一张最该先建立的脑图"></a>一张最该先建立的脑图</h2><p>如果把常见防御按“主要看哪一层、主要干什么”来粗略理解，可以先这么记：</p>
+<ul>
+<li><code>防火墙</code>：更偏网络边界，主要按 IP、端口、协议放行或拦截</li>
+<li><code>WAF</code>：更偏 Web 应用层，主要看 HTTP 请求内容是不是像攻击</li>
+<li><code>IDS</code>：更偏检测和告警，发现异常但未必直接拦</li>
+<li><code>IPS</code>：更偏实时阻断，检测到异常后会直接动手拦</li>
+<li><code>蜜罐</code>：更偏诱捕和取证，目标不是正常提供业务，而是吸引攻击者暴露行为</li>
+</ul>
+<p>只要这张图先立住，后面很多概念就不会混。</p>
+<h2 id="防火墙：先挡“谁能过来”"><a href="#防火墙：先挡“谁能过来”" class="headerlink" title="防火墙：先挡“谁能过来”"></a>防火墙：先挡“谁能过来”</h2><p>最传统的防御设备通常先从防火墙开始理解。</p>
+<p>它最核心的工作不是看某个请求是不是 <code>SQL 注入</code> 或 <code>XSS</code>，而是先看：</p>
+<ul>
+<li>请求从哪来</li>
+<li>要访问哪个地址</li>
+<li>要打哪个端口</li>
+<li>用的是什么协议</li>
+</ul>
+<p>所以防火墙更像是网络边界上的门卫。</p>
+<p>它最常处理的问题包括：</p>
+<ul>
+<li>某个 IP 能不能访问内网服务</li>
+<li>某个端口要不要开放</li>
+<li>某种协议该不该放行</li>
+<li>外部网络和内部网络之间怎么隔离</li>
+</ul>
+<h3 id="为什么防火墙对-Web-也重要"><a href="#为什么防火墙对-Web-也重要" class="headerlink" title="为什么防火墙对 Web 也重要"></a>为什么防火墙对 Web 也重要</h3><p>很多新手会觉得，既然我们学的是 <code>Web</code>，那防火墙好像离得很远。其实不是。</p>
+<p>因为一个 <code>Web</code> 站点能不能被打，首先要看相关端口和路径是否真的暴露在外。</p>
+<p>例如：</p>
+<ul>
+<li><code>80/443</code> 开着，说明 Web 服务对外可见</li>
+<li>后台管理端口没开放，很多攻击面自然就没了</li>
+<li>数据库端口如果只允许内网访问，外部攻击者就很难直接碰到数据库</li>
+</ul>
+<p>所以从做题角度看，防火墙虽然不一定直接“识别 payload”，但它决定了：</p>
+<ul>
+<li>你到底能不能连上目标</li>
+<li>你能看到哪些服务</li>
+<li>哪些横向路径一开始就被切断了</li>
+</ul>
+<h3 id="防火墙在-CTF-Web-里常见的体现"><a href="#防火墙在-CTF-Web-里常见的体现" class="headerlink" title="防火墙在 CTF Web 里常见的体现"></a>防火墙在 CTF Web 里常见的体现</h3><p>你可能会遇到这些现象：</p>
+<ul>
+<li>某个端口根本连不上</li>
+<li>某个服务只有内网能访问</li>
+<li>某个路径在本地通，但从外部不通</li>
+<li>某些请求被静默丢弃，连明确报错都没有</li>
+</ul>
+<p>这些时候就要想到，问题可能不在应用逻辑，而在更前面的网络边界控制。</p>
+<h2 id="WAF：专门盯-HTTP-请求"><a href="#WAF：专门盯-HTTP-请求" class="headerlink" title="WAF：专门盯 HTTP 请求"></a>WAF：专门盯 HTTP 请求</h2><p><code>WAF</code> 全称是 <code>Web Application Firewall</code>，也就是 Web 应用防火墙。</p>
+<p>如果说普通防火墙更关心“这个连接该不该过”，那 <code>WAF</code> 更关心的是：</p>
+<p><code>这个 HTTP 请求看起来像不像攻击。</code></p>
+<p>它常看的东西包括：</p>
+<ul>
+<li>URL</li>
+<li>Query 参数</li>
+<li>POST 数据</li>
+<li>Cookie</li>
+<li>Header</li>
+<li>请求频率</li>
+<li>特定危险关键字</li>
+<li>某些已知攻击特征</li>
+</ul>
+<p>所以 <code>WAF</code> 和传统防火墙最大的区别，可以简单概括成一句话：</p>
+<p><code>防火墙主要看网络层和传输层，WAF 主要盯应用层。</code></p>
+<h3 id="为什么-WAF-对-CTF-Web-特别重要"><a href="#为什么-WAF-对-CTF-Web-特别重要" class="headerlink" title="为什么 WAF 对 CTF Web 特别重要"></a>为什么 WAF 对 CTF Web 特别重要</h3><p>因为你做题时真正构造的很多东西，都在 <code>WAF</code> 的观察范围内。</p>
+<p>比如：</p>
+<ul>
+<li>参数里出现危险函数名</li>
+<li>请求里出现典型注入特征</li>
+<li>某些上传内容像脚本</li>
+<li>某些请求头或路径像扫描器行为</li>
+</ul>
+<p>这也是为什么很多人做题时会遇到这种情况：</p>
+<ul>
+<li>页面能正常打开</li>
+<li>但一发特定请求就 <code>403</code></li>
+<li>或者直接出现拦截页</li>
+<li>或者某些请求突然响应长度异常</li>
+</ul>
+<p>这时首先想到的就该是：<code>是不是 WAF 在看我的请求内容。</code></p>
+<h3 id="WAF-常见部署方式，理解到什么程度就够了"><a href="#WAF-常见部署方式，理解到什么程度就够了" class="headerlink" title="WAF 常见部署方式，理解到什么程度就够了"></a>WAF 常见部署方式，理解到什么程度就够了</h3><p>对初学者来说，最值得记的只有两件事。</p>
+<p>第一，<code>WAF</code> 往往是在 Web 服务器前面。</p>
+<p>也就是说，请求通常不是直接到达真实应用，而是先经过一层检查。</p>
+<p>第二，<code>WAF</code> 有的是真正在流量路径上，有的只是旁路看流量。</p>
+<p>这会直接影响它能做的事：</p>
+<ul>
+<li>在直路上，它可以真正拦截</li>
+<li>在旁路上，它更像监控和告警</li>
+</ul>
+<p>所以如果你看到的是“请求被挡住”，那更像前者；如果只是事后被记录或告警，那更像后者。</p>
+<h3 id="从现象上，怎么怀疑自己碰到了-WAF"><a href="#从现象上，怎么怀疑自己碰到了-WAF" class="headerlink" title="从现象上，怎么怀疑自己碰到了 WAF"></a>从现象上，怎么怀疑自己碰到了 WAF</h3><p>下面这些信号很常见：</p>
+<ul>
+<li>某些关键词一出现就 <code>403</code></li>
+<li>正常浏览没事，扫描器一跑就被拦</li>
+<li>响应页里直接写着拦截、校验、风险、访问异常</li>
+<li>访问速度或频率一高，马上出现限制</li>
+<li>某些请求返回固定模板，长度和普通页面明显不同</li>
+</ul>
+<p>这类现象在 <code>CTF Web</code> 里很常见。理解 <code>WAF</code> 的价值，不是为了背设备原理，而是为了让你意识到：</p>
+<p><code>不是所有失败，都是漏洞方向错了；有时候是应用层防御先把你拦下来了。</code></p>
+<h2 id="IDS：负责发现异常，但不一定亲自拦"><a href="#IDS：负责发现异常，但不一定亲自拦" class="headerlink" title="IDS：负责发现异常，但不一定亲自拦"></a>IDS：负责发现异常，但不一定亲自拦</h2><p><code>IDS</code> 是 <code>Intrusion Detection System</code>，也就是入侵检测系统。</p>
+<p>它的关键词是：<code>检测</code>。</p>
+<p>它主要做的事是：</p>
+<ul>
+<li>收集流量、日志、系统行为</li>
+<li>分析这些数据里有没有异常</li>
+<li>一旦发现可疑行为，发出告警、记录事件</li>
+</ul>
+<p>它更像安全团队的报警器，而不是路口的铁门。</p>
+<h3 id="为什么-IDS-常被说成“旁路设备”"><a href="#为什么-IDS-常被说成“旁路设备”" class="headerlink" title="为什么 IDS 常被说成“旁路设备”"></a>为什么 IDS 常被说成“旁路设备”</h3><p>因为很多 <code>IDS</code> 不是直接卡在业务流量正中间，而是拿流量副本、系统日志或者主机行为数据来分析。</p>
+<p>这样做的好处是：</p>
+<ul>
+<li>不容易影响正常业务</li>
+<li>部署压力相对小</li>
+<li>能持续监控</li>
+</ul>
+<p>但缺点也很明显：</p>
+<ul>
+<li>它可能知道你在攻击</li>
+<li>但它不一定能当场把你拦下来</li>
+</ul>
+<p>所以从最朴素的角度看，<code>IDS</code> 常见结果是：</p>
+<ul>
+<li>告警</li>
+<li>记录</li>
+<li>提醒管理员</li>
+</ul>
+<p>而不是直接阻断。</p>
+<h3 id="IDS-在-CTF-Web-里意味着什么"><a href="#IDS-在-CTF-Web-里意味着什么" class="headerlink" title="IDS 在 CTF Web 里意味着什么"></a>IDS 在 CTF Web 里意味着什么</h3><p>在纯题目环境里，你未必真的“看得见”一套完整 <code>IDS</code>，但你要理解这种思路，因为很多题会借它引出一些现象：</p>
+<ul>
+<li>某些异常操作虽然成功了，但后面触发了日志审计</li>
+<li>某些题目会给你日志文件，反过来让你从防守视角判断攻击行为</li>
+<li>有些靶场环境里，攻击不是被立即阻断，而是在事后留下明显痕迹</li>
+</ul>
+<p>这对做题最大的帮助是：你开始会重视 <code>日志</code>、<code>访问记录</code>、<code>行为痕迹</code> 这些东西，而不是只盯 payload 本身。</p>
+<h2 id="IPS：不仅看见你，还会立刻拦你"><a href="#IPS：不仅看见你，还会立刻拦你" class="headerlink" title="IPS：不仅看见你，还会立刻拦你"></a>IPS：不仅看见你，还会立刻拦你</h2><p><code>IPS</code> 是 <code>Intrusion Prevention System</code>，也就是入侵防御系统。</p>
+<p>它和 <code>IDS</code> 的关系很好记：</p>
+<ul>
+<li><code>IDS</code> 偏“发现问题并告警”</li>
+<li><code>IPS</code> 偏“发现问题后直接阻断”</li>
+</ul>
+<p>也可以把它理解成：</p>
+<p><code>IPS = 更主动、离实战拦截更近的 IDS。</code></p>
+<h3 id="IPS-为什么更像“带阻断能力的检测”"><a href="#IPS-为什么更像“带阻断能力的检测”" class="headerlink" title="IPS 为什么更像“带阻断能力的检测”"></a>IPS 为什么更像“带阻断能力的检测”</h3><p>因为它不仅要分析流量或行为，还要有权限在检测到异常时立刻采取动作，比如：</p>
+<ul>
+<li>丢弃数据包</li>
+<li>中断连接</li>
+<li>阻止某类请求继续发送</li>
+<li>暂时封掉攻击源</li>
+</ul>
+<p>这也是它和 <code>IDS</code> 的关键区别。</p>
+<h3 id="IPS-的代价也更高"><a href="#IPS-的代价也更高" class="headerlink" title="IPS 的代价也更高"></a>IPS 的代价也更高</h3><p>因为 <code>IPS</code> 站在真正的流量路径上，所以它虽然更能拦，但也更容易带来问题：</p>
+<ul>
+<li>性能压力更大</li>
+<li>出故障时影响更直接</li>
+<li>误报时会把正常请求一起拦掉</li>
+</ul>
+<p>这也是为什么现实部署里，<code>IPS</code> 的误报会比 <code>IDS</code> 更让人头疼。<code>IDS</code> 误报，最多是告警吵；<code>IPS</code> 误报，可能直接影响业务。</p>
+<h3 id="从做题角度，什么现象更像-IPS"><a href="#从做题角度，什么现象更像-IPS" class="headerlink" title="从做题角度，什么现象更像 IPS"></a>从做题角度，什么现象更像 IPS</h3><p>如果你遇到这些情况，可以往 <code>IPS</code> 的方向想：</p>
+<ul>
+<li>某些请求发出去后连接直接被切</li>
+<li>多次尝试后源地址临时不可用</li>
+<li>同类请求持续被主动重置</li>
+<li>不是单纯返回 <code>403</code>，而是通信层面被强行终止</li>
+</ul>
+<p>这通常说明问题已经不只是“应用返回一个错误页”了，而是更靠前、更主动的防御在工作。</p>
+<h2 id="蜜罐：它不是为了正常服务，而是为了诱捕你"><a href="#蜜罐：它不是为了正常服务，而是为了诱捕你" class="headerlink" title="蜜罐：它不是为了正常服务，而是为了诱捕你"></a>蜜罐：它不是为了正常服务，而是为了诱捕你</h2><p><code>蜜罐</code> 是这几类防御里最容易被误解的一种。</p>
+<p>很多新手第一次听到蜜罐，会以为它也是一种“更强的拦截器”。其实不是。</p>
+<p>蜜罐的目标通常不是保护真实业务本身，而是：</p>
+<ul>
+<li>吸引攻击者去碰它</li>
+<li>记录攻击者的行为</li>
+<li>拿到攻击样本、路径、工具和特征</li>
+<li>延缓攻击过程，增加攻击成本</li>
+</ul>
+<p>所以它更像一个“诱饵系统”。</p>
+<h3 id="为什么蜜罐很适合做主动防御"><a href="#为什么蜜罐很适合做主动防御" class="headerlink" title="为什么蜜罐很适合做主动防御"></a>为什么蜜罐很适合做主动防御</h3><p>因为它不是等业务系统先挨打再补救，而是主动布一个看起来有价值的目标，等攻击者自己暴露出来。</p>
+<p>它的价值主要体现在：</p>
+<ul>
+<li>误报率低</li>
+<li>捕获到的数据往往很有价值</li>
+<li>能帮助溯源和分析攻击手法</li>
+</ul>
+<p>但它也不是没有风险。如果蜜罐设计不好、隔离不好，它自己反而可能被利用成跳板。</p>
+<h3 id="蜜罐对-CTF-Web-的启发是什么"><a href="#蜜罐对-CTF-Web-的启发是什么" class="headerlink" title="蜜罐对 CTF Web 的启发是什么"></a>蜜罐对 CTF Web 的启发是什么</h3><p>即使在比赛里你不一定真的部署蜜罐，理解它依然很有用。因为它会改变你看待“目标系统”的方式。</p>
+<p>很多题目会故意放一些特别显眼的入口，比如：</p>
+<ul>
+<li>看起来过于明显的后台</li>
+<li>看起来像测试页的假目标</li>
+<li>很容易扫到但打不出结果的可疑服务</li>
+</ul>
+<p>这不一定就是蜜罐，但这种设计思路和蜜罐很像：<code>故意把攻击者往某个方向引。</code></p>
+<p>所以做题时也要保留一点警惕：</p>
+<ul>
+<li>太明显的入口，未必就是最终突破口</li>
+<li>某些东西被你发现，本身可能就是题目希望你先看见的</li>
+</ul>
+<h2 id="被动防御和主动防御，该怎么区分"><a href="#被动防御和主动防御，该怎么区分" class="headerlink" title="被动防御和主动防御，该怎么区分"></a>被动防御和主动防御，该怎么区分</h2><h3 id="被动防御"><a href="#被动防御" class="headerlink" title="被动防御"></a>被动防御</h3><p>更偏“发现、记录、过滤、修复”。</p>
+<p>典型代表：</p>
+<ul>
+<li>防火墙</li>
+<li><code>WAF</code></li>
+<li><code>IDS</code></li>
+</ul>
+<p>它们通常建立在已有规则、已知模式、已有策略上，重点是降低风险和减少损害。</p>
+<h3 id="主动防御"><a href="#主动防御" class="headerlink" title="主动防御"></a>主动防御</h3><p>更偏“提前布置、主动诱导、实时阻断、尽早止损”。</p>
+<p>典型代表：</p>
+<ul>
+<li><code>IPS</code></li>
+<li>蜜罐</li>
+</ul>
+<p>它们更强调在攻击尚未造成更大破坏前，把攻击尽快拦住、转移、限制或者暴露出来。</p>
+<p>不过你也别把这个区分看得太死。现实里很多系统是混合的，检测、阻断、诱捕、日志、告警会一起出现。</p>
+<h2 id="在-CTF-Web-里，这些防御分别会怎么影响你"><a href="#在-CTF-Web-里，这些防御分别会怎么影响你" class="headerlink" title="在 CTF Web 里，这些防御分别会怎么影响你"></a>在 CTF Web 里，这些防御分别会怎么影响你</h2><p>这一部分是整篇最值得带走的。</p>
+<p>如果你做题时遇到异常，可以先这样判断：</p>
+<h3 id="1-根本连不上，先想边界和端口"><a href="#1-根本连不上，先想边界和端口" class="headerlink" title="1. 根本连不上，先想边界和端口"></a>1. 根本连不上，先想边界和端口</h3><p>可能的方向：</p>
+<ul>
+<li>网络防火墙</li>
+<li>安全组</li>
+<li>端口未开放</li>
+<li>内外网隔离</li>
+</ul>
+<h3 id="2-页面能开，但某些-payload-一发就被拦"><a href="#2-页面能开，但某些-payload-一发就被拦" class="headerlink" title="2. 页面能开，但某些 payload 一发就被拦"></a>2. 页面能开，但某些 payload 一发就被拦</h3><p>优先想到：</p>
+<ul>
+<li><code>WAF</code></li>
+<li>参数内容过滤</li>
+<li>特征规则命中</li>
+</ul>
+<h3 id="3-请求不是返回错误页，而是连接被中断"><a href="#3-请求不是返回错误页，而是连接被中断" class="headerlink" title="3. 请求不是返回错误页，而是连接被中断"></a>3. 请求不是返回错误页，而是连接被中断</h3><p>优先想到：</p>
+<ul>
+<li><code>IPS</code></li>
+<li>更激进的前置拦截</li>
+</ul>
+<h3 id="4-题目给了日志、审计、访问记录"><a href="#4-题目给了日志、审计、访问记录" class="headerlink" title="4. 题目给了日志、审计、访问记录"></a>4. 题目给了日志、审计、访问记录</h3><p>优先想到：</p>
+<ul>
+<li><code>IDS</code></li>
+<li>主机侧或网络侧检测</li>
+<li>让你从痕迹反推攻击行为</li>
+</ul>
+<h3 id="5-目标过于“诱人”但打起来不对劲"><a href="#5-目标过于“诱人”但打起来不对劲" class="headerlink" title="5. 目标过于“诱人”但打起来不对劲"></a>5. 目标过于“诱人”但打起来不对劲</h3><p>优先想到：</p>
+<ul>
+<li>诱导入口</li>
+<li>伪目标</li>
+<li>接近蜜罐思路的题目设计</li>
+</ul>
+<p>只要你能把现象和这几个机制对上号，做题时就不会总是陷入“怎么又没回显”的慌乱状态。</p>
+<h2 id="新手最容易混淆的几个点"><a href="#新手最容易混淆的几个点" class="headerlink" title="新手最容易混淆的几个点"></a>新手最容易混淆的几个点</h2><ul>
+<li>把防火墙和 <code>WAF</code> 当成一个东西。前者更偏网络边界，后者更偏 HTTP 应用层。</li>
+<li>把 <code>IDS</code> 和 <code>IPS</code> 当成一个东西。前者偏发现和告警，后者偏实时阻断。</li>
+<li>以为蜜罐就是“更强的防火墙”。其实蜜罐的核心是诱骗和取证。</li>
+<li>一遇到 <code>403</code> 就只想到权限问题。很多时候也可能是 <code>WAF</code> 或应用层策略。</li>
+<li>一遇到连接断开就以为服务挂了。也可能是更主动的拦截设备在丢流量或切连接。</li>
+</ul>
+<h2 id="一套够用的防御视角检查清单"><a href="#一套够用的防御视角检查清单" class="headerlink" title="一套够用的防御视角检查清单"></a>一套够用的防御视角检查清单</h2><p>如果你在 <code>CTF Web</code> 里碰到请求异常、访问异常或结果异常，可以按这个顺序快速判断：</p>
+<ol>
+<li>我是根本连不上，还是连得上但请求被拦。</li>
+<li>如果根本连不上，是不是端口、网段、边界策略的问题。</li>
+<li>如果页面能访问，但特定请求被拦，是不是应用层过滤或 <code>WAF</code>。</li>
+<li>如果连接被重置或直接断开，是不是更主动的前置阻断。</li>
+<li>如果题目给了日志或审计信息，是不是在考我用防守视角还原攻击过程。</li>
+<li>如果某个入口显得过于明显，是不是题目在故意引导我先走这条路。</li>
+</ol>
+<h2 id="为什么学攻击的人也必须懂一点防御"><a href="#为什么学攻击的人也必须懂一点防御" class="headerlink" title="为什么学攻击的人也必须懂一点防御"></a>为什么学攻击的人也必须懂一点防御</h2><p>因为很多时候，理解防御不是为了“转岗做蓝队”，而是为了让你的攻击判断更准确。</p>
+<p>你知道一层防御在看什么，就会更明白：</p>
+<ul>
+<li>哪些请求容易被发现</li>
+<li>哪些异常是网络层问题，哪些是应用层问题</li>
+<li>为什么同一个 payload 在两个环境里表现不一样</li>
+<li>为什么有时漏洞明明存在，但利用就是不顺</li>
+</ul>
+<p>这也是 <code>CTF Web</code> 很重要的一种成长：从“只会打洞”，慢慢变成“能同时理解攻击链和防御链”。</p>
+<h2 id="最后把它串起来"><a href="#最后把它串起来" class="headerlink" title="最后把它串起来"></a>最后把它串起来</h2><p>如果把这篇文章压缩成最短的一句话，那就是：</p>
+<p><code>防火墙决定你能不能靠近目标，WAF 决定你的 HTTP 请求像不像攻击，IDS 决定你的异常会不会被发现，IPS 决定你会不会被当场拦下，蜜罐决定你有没有可能被故意引到一个假目标上。</code></p>
+<p>对 <code>CTF Web</code> 初学者来说，只要先把这条主线建立起来，很多以前看起来杂乱的安全名词就会突然变得很清楚。你之后再去学具体漏洞、审计代码、看拦截现象时，脑子里就会有一张更完整的地图。</p>
+]]></content>
+      <categories>
+        <category>Web安全</category>
+      </categories>
+      <tags>
+        <tag>Web安全</tag>
+        <tag>CTF</tag>
+        <tag>防御</tag>
+        <tag>WAF</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>CTF Web 入门基础速查</title>
     <url>/2026/03/19/ctf-web-basics-quick-reference/</url>
     <content><![CDATA[<p>这篇文章的目标不是“讲全”，而是先把做 <code>CTF Web</code> 时最常用、最容易卡住的基础点收成一篇能快速翻的速查笔记。</p>
@@ -340,307 +653,452 @@
       </tags>
   </entry>
   <entry>
-    <title>CTF Web 防御视角</title>
-    <url>/2026/03/24/ctf-web-defense-basics-for-ctf-web/</url>
-    <content><![CDATA[<p>很多人学 <code>CTF Web</code> 时，会把精力几乎全部放在漏洞和利用上，但做题做到一定阶段后，你很快就会发现另一件事同样重要：</p>
-<p><code>你不仅要知道题目哪里有洞，还要知道自己为什么会被拦。</code></p>
-<p>这篇文章想讲的，就是 <code>CTF Web</code> 里最常见的几类防御思路：<code>防火墙</code>、<code>WAF</code>、<code>IDS</code>、<code>IPS</code>、<code>蜜罐</code>。我不会把它写成设备介绍，而是尽量讲成一篇小白能看懂、做题时也能用上的“防御视角地图”。</p>
-<p>你看完后，至少应该能搞清楚这些问题：</p>
+    <title>CTF Web 信息收集与信息泄露</title>
+    <url>/2026/03/20/ctf-web-information-gathering-and-disclosure/</url>
+    <content><![CDATA[<p>很多新手做 <code>CTF Web</code> 时，最容易卡住的点不是“不会漏洞”，而是不知道该从哪里看、先看什么、看到一个线索后又该往哪条路继续走。</p>
+<p>这篇文章就只做一件事：把 <code>信息收集</code> 和 <code>信息泄露</code> 这件事讲透，而且尽量只讲对做题真正有用的部分。你可以把它理解成一条从“看到目标”到“找到入口”的路线图。</p>
+<h2 id="先建立一个做题脑图"><a href="#先建立一个做题脑图" class="headerlink" title="先建立一个做题脑图"></a>先建立一个做题脑图</h2><p>对 <code>CTF Web</code> 来说，信息收集的目标不是“知道得越多越好”，而是尽快回答下面几个问题：</p>
 <ul>
-<li>防火墙和 <code>WAF</code> 到底有什么区别</li>
-<li><code>IDS</code> 和 <code>IPS</code> 为什么总被放在一起讲</li>
-<li>蜜罐为什么不是单纯的“拦截设备”</li>
-<li>为什么有的请求是 <code>403</code>，有的请求直接被断开，有的请求只是被记录</li>
-<li>从 <code>CTF Web</code> 的角度看，这些防御机制分别会怎么影响做题</li>
+<li>这个站点还有没有别的入口</li>
+<li>这个入口背后跑的是什么技术栈</li>
+<li>有没有隐藏页面、隐藏参数、隐藏接口</li>
+<li>有没有已经泄露出来的源码、配置、账号、路径、报错信息</li>
+<li>这些线索最终能不能转成漏洞利用点</li>
 </ul>
-<h2 id="先记住一个总原则"><a href="#先记住一个总原则" class="headerlink" title="先记住一个总原则"></a>先记住一个总原则</h2><p><code>防御的核心不是让系统绝对安全，而是提高攻击成本。</code></p>
-<p>这个观念非常重要。</p>
-<p>真实世界里没有哪一层防御能保证“永不失守”，所以防守方通常做的是分层防御：</p>
+<p>如果你一上来就只会盲扫目录、盲打 payload，很容易陷入“看起来很努力，但实际上没有方向”的状态。更高效的方式是按顺序走：</p>
+<ol>
+<li>先做被动信息收集，尽量不与目标产生太多交互。</li>
+<li>再做主动探测，确认入口、端口、目录、指纹和参数。</li>
+<li>最后把拿到的线索映射成具体漏洞方向。</li>
+</ol>
+<p>你可以先记住一句话：</p>
+<p><code>信息收集的本质，是把目标的攻击面从“一个网址”还原成“一整套可分析的系统”。</code></p>
+<h2 id="一条适合新手的-CTF-Web-工作流"><a href="#一条适合新手的-CTF-Web-工作流" class="headerlink" title="一条适合新手的 CTF Web 工作流"></a>一条适合新手的 CTF Web 工作流</h2><p>如果题目只给了一个站点或一个域名，我建议按下面这个顺序推进：</p>
+<ol>
+<li>浏览器访问首页，观察标题、报错、跳转、注释、脚本、请求包。</li>
+<li>看响应头、Cookie、Server、X-Powered-By、状态码、重定向位置。</li>
+<li>查常见泄露点，如 <code>robots.txt</code>、<code>sitemap.xml</code>、<code>phpinfo.php</code>、<code>.git/HEAD</code>、备份文件。</li>
+<li>做目录和文件枚举，找后台、上传点、调试页、接口文档、备份包。</li>
+<li>做指纹识别，确认语言、框架、CMS、中间件、WAF 特征。</li>
+<li>如果题目是域名而不是单站，再做子域名、GitHub、证书透明度、网络空间测绘。</li>
+<li>如果题目给的是 IP、网段或者明显是多主机场景，再考虑端口扫描和 C 段收集。</li>
+</ol>
+<p>这个顺序的核心原因很简单：<code>CTF Web</code> 题往往不是让你“扫得最全”，而是让你尽快定位“最值得打的点”。</p>
+<h2 id="被动信息收集：先把公开线索拿干净"><a href="#被动信息收集：先把公开线索拿干净" class="headerlink" title="被动信息收集：先把公开线索拿干净"></a>被动信息收集：先把公开线索拿干净</h2><p>被动信息收集的好处是快、隐蔽、成本低。在真实攻防里它能减少暴露，在 <code>CTF</code> 里它能帮你少走很多弯路。</p>
+<h3 id="1-搜索引擎不是用来搜文章的，是用来搜入口的"><a href="#1-搜索引擎不是用来搜文章的，是用来搜入口的" class="headerlink" title="1. 搜索引擎不是用来搜文章的，是用来搜入口的"></a>1. 搜索引擎不是用来搜文章的，是用来搜入口的</h3><p>搜索引擎最重要的价值，不是“搜到官网”，而是搜到那些开发者没打算给普通用户看的页面。</p>
+<p>最常用的几个语法：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">site:example.com</span><br><span class="line">site:example.com inurl:admin</span><br><span class="line">site:example.com intitle:login</span><br><span class="line">site:example.com filetype:pdf</span><br><span class="line">site:example.com &quot;index of&quot;</span><br><span class="line">site:example.com &quot;.git&quot;</span><br></pre></td></tr></table></figure>
+
+<p>这些语法在做题里最常拿来找下面几类东西：</p>
 <ul>
-<li>边界先挡一层</li>
-<li>应用层再看一层</li>
-<li>主机和日志再监控一层</li>
-<li>真拦不住时，至少要能发现、记录、隔离、止损</li>
+<li>后台登录页</li>
+<li>文件索引目录</li>
+<li>文档、备份、配置文件</li>
+<li>调试页面和测试页面</li>
+<li>敏感关键词关联页面</li>
 </ul>
-<p>从 <code>CTF Web</code> 的角度看，理解这件事的意义在于：</p>
+<p>做题时要特别留意这几种搜索结果：</p>
 <ul>
-<li>你能更快判断自己当前遇到的是哪一层限制</li>
-<li>你不会把所有异常都误判成“题目坏了”</li>
-<li>你能把“请求失败”的现象，映射回背后的防御机制</li>
+<li>路径名很像后台，如 <code>/admin</code>、<code>/manage</code>、<code>/console</code>、<code>/login</code></li>
+<li>页面标题暴露系统名、版本号、组件名</li>
+<li>搜到 <code>Index of</code>，说明目录浏览可能开着</li>
+<li>搜到 <code>.git</code>、<code>.svn</code>、<code>.bak</code>、<code>.zip</code>、<code>.sql</code>，优先级很高</li>
+<li>搜到 PDF、DOCX、XLSX，可能带路径、邮箱、子域名、用户名</li>
 </ul>
-<h2 id="一张最该先建立的脑图"><a href="#一张最该先建立的脑图" class="headerlink" title="一张最该先建立的脑图"></a>一张最该先建立的脑图</h2><p>如果把常见防御按“主要看哪一层、主要干什么”来粗略理解，可以先这么记：</p>
+<p>很多人学搜索语法时容易犯一个误区：只记语法，不知道为什么搜。真正有用的思路是反过来想：</p>
 <ul>
-<li><code>防火墙</code>：更偏网络边界，主要按 IP、端口、协议放行或拦截</li>
-<li><code>WAF</code>：更偏 Web 应用层，主要看 HTTP 请求内容是不是像攻击</li>
-<li><code>IDS</code>：更偏检测和告警，发现异常但未必直接拦</li>
-<li><code>IPS</code>：更偏实时阻断，检测到异常后会直接动手拦</li>
-<li><code>蜜罐</code>：更偏诱捕和取证，目标不是正常提供业务，而是吸引攻击者暴露行为</li>
+<li>我想找后台，那就搜 <code>inurl:admin</code></li>
+<li>我想找泄露文件，那就搜 <code>filetype:</code> 和备份后缀</li>
+<li>我想找目录遍历，那就搜 <code>&quot;Index of&quot;</code></li>
+<li>我想找开发痕迹，那就搜系统名、项目名、框架名</li>
 </ul>
-<p>只要这张图先立住，后面很多概念就不会混。</p>
-<h2 id="防火墙：先挡“谁能过来”"><a href="#防火墙：先挡“谁能过来”" class="headerlink" title="防火墙：先挡“谁能过来”"></a>防火墙：先挡“谁能过来”</h2><p>最传统的防御设备通常先从防火墙开始理解。</p>
-<p>它最核心的工作不是看某个请求是不是 <code>SQL 注入</code> 或 <code>XSS</code>，而是先看：</p>
+<h3 id="2-GitHub-往往泄露的不是代码本身，而是上下文"><a href="#2-GitHub-往往泄露的不是代码本身，而是上下文" class="headerlink" title="2. GitHub 往往泄露的不是代码本身，而是上下文"></a>2. GitHub 往往泄露的不是代码本身，而是上下文</h3><p>很多 <code>CTF Web</code> 题不会直接把源码给你，但会通过各种方式让你接近源码。<code>GitHub</code> 搜索就是常见入口之一。</p>
+<p>常见搜索思路：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">&quot;example.com&quot;</span><br><span class="line">&quot;SECRET_KEY&quot;</span><br><span class="line">&quot;DB_PASSWORD&quot;</span><br><span class="line">&quot;access_key&quot;</span><br><span class="line">&quot;Authorization:&quot;</span><br><span class="line">org:example</span><br><span class="line">user:example</span><br><span class="line">path:/config/</span><br><span class="line">language:php</span><br><span class="line">language:python</span><br></pre></td></tr></table></figure>
+
+<p>在 <code>GitHub</code> 里你最想看到的东西不是“炫技代码”，而是下面这些：</p>
 <ul>
-<li>请求从哪来</li>
-<li>要访问哪个地址</li>
-<li>要打哪个端口</li>
-<li>用的是什么协议</li>
+<li>配置文件</li>
+<li>数据库连接串</li>
+<li>API Key、Token、Secret</li>
+<li>上传路径、静态目录、调试开关</li>
+<li>提交历史里的旧密码、旧接口、旧路径</li>
+<li>代码注释里的接口说明和业务逻辑</li>
 </ul>
-<p>所以防火墙更像是网络边界上的门卫。</p>
-<p>它最常处理的问题包括：</p>
+<p>对 <code>CTF Web</code> 来说，<code>GitHub</code> 线索最常带来三类收益：</p>
 <ul>
-<li>某个 IP 能不能访问内网服务</li>
-<li>某个端口要不要开放</li>
-<li>某种协议该不该放行</li>
-<li>外部网络和内部网络之间怎么隔离</li>
+<li>确认技术栈，比如 <code>Flask</code>、<code>Laravel</code>、<code>ThinkPHP</code>、<code>Spring Boot</code></li>
+<li>拿到敏感配置，比如数据库账号、JWT 密钥、Redis 地址</li>
+<li>找到隐藏接口和参数名，比如 <code>/api/debug</code>、<code>/upload</code>、<code>role</code>、<code>is_admin</code></li>
 </ul>
-<h3 id="为什么防火墙对-Web-也重要"><a href="#为什么防火墙对-Web-也重要" class="headerlink" title="为什么防火墙对 Web 也重要"></a>为什么防火墙对 Web 也重要</h3><p>很多新手会觉得，既然我们学的是 <code>Web</code>，那防火墙好像离得很远。其实不是。</p>
-<p>因为一个 <code>Web</code> 站点能不能被打，首先要看相关端口和路径是否真的暴露在外。</p>
+<p>如果你已经拿到了站点名、页面标题、JS 文件名、报错堆栈中的目录名，就更应该去 <code>GitHub</code> 搜这些关键词。很多题目的“线索链”就是这样拼起来的。</p>
+<h3 id="3-网络空间测绘平台适合做“资产扩展”"><a href="#3-网络空间测绘平台适合做“资产扩展”" class="headerlink" title="3. 网络空间测绘平台适合做“资产扩展”"></a>3. 网络空间测绘平台适合做“资产扩展”</h3><p>像 <code>FOFA</code>、<code>Shodan</code>、<code>ZoomEye</code> 这类平台，本质上是在帮你回答一个问题：</p>
+<p><code>这个目标在互联网里，还暴露了哪些同类资产？</code></p>
+<p>常见检索维度包括：</p>
+<ul>
+<li><code>domain</code></li>
+<li><code>ip</code></li>
+<li><code>port</code></li>
+<li><code>title</code></li>
+<li><code>header</code></li>
+<li><code>body</code></li>
+<li><code>banner</code></li>
+<li><code>server</code></li>
+</ul>
+<p>在 <code>CTF Web</code> 中，这类平台最有价值的场景有两个：</p>
+<ul>
+<li>题目给的是域名，你怀疑还有别的子站、别的端口、别的服务</li>
+<li>题目给的是一个登录页或组件页，你想反推出系统版本和部署特征</li>
+</ul>
+<p>比如：</p>
+<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">domain=&quot;example.com&quot;</span><br><span class="line">title=&quot;后台管理&quot;</span><br><span class="line">server=&quot;nginx&quot;</span><br><span class="line">body=&quot;upload&quot;</span><br><span class="line">port=&quot;8080&quot;</span><br></pre></td></tr></table></figure>
+
+<p>如果测绘平台显示同域名下还有 <code>8080</code>、<code>7001</code>、<code>8443</code> 等端口，那就说明你的攻击面可能远不止首页那个 <code>80/443</code>。</p>
+<h3 id="4-子域名收集的意义，是把“一个站”扩展成“一片站”"><a href="#4-子域名收集的意义，是把“一个站”扩展成“一片站”" class="headerlink" title="4. 子域名收集的意义，是把“一个站”扩展成“一片站”"></a>4. 子域名收集的意义，是把“一个站”扩展成“一片站”</h3><p>很多新手看到一个目标域名，就默认“所有内容都在这个域名的首页里”。这通常是错的。</p>
+<p>子域名常常意味着：</p>
+<ul>
+<li>不同业务系统</li>
+<li>不同开发团队</li>
+<li>不同权限体系</li>
+<li>不同技术栈</li>
+<li>不同安全成熟度</li>
+</ul>
+<p>举个非常常见的情况：</p>
+<ul>
+<li><code>www.example.com</code> 是正式站</li>
+<li><code>admin.example.com</code> 是后台</li>
+<li><code>api.example.com</code> 是接口</li>
+<li><code>dev.example.com</code> 是测试环境</li>
+<li><code>static.example.com</code> 放前端资源</li>
+</ul>
+<p>对于 <code>CTF Web</code>，子域名里最值得关注的往往不是“数量多”，而是下面这些名字：</p>
+<ul>
+<li><code>admin</code></li>
+<li><code>api</code></li>
+<li><code>dev</code></li>
+<li><code>test</code></li>
+<li><code>uat</code></li>
+<li><code>staging</code></li>
+<li><code>oa</code></li>
+<li><code>git</code></li>
+<li><code>upload</code></li>
+</ul>
+<p>工具上可以知道有 <code>OneForAll</code>、<code>Subfinder</code>、<code>Amass</code> 这一类，但你要明白重点不在于“我会不会某个工具”，而在于：</p>
+<ul>
+<li>发现子域名后要立刻访问</li>
+<li>看是否共用 Cookie 或单点登录</li>
+<li>看是否存在开发环境、未授权接口、调试页面</li>
+<li>看是否能从一个低权限子域影响主站</li>
+</ul>
+<p>如果是纯单站题，这一步的重要性不一定高；如果是多域名、多主机题，这一步往往直接决定你能不能进下一层。</p>
+<h2 id="主动信息收集：开始和目标交互"><a href="#主动信息收集：开始和目标交互" class="headerlink" title="主动信息收集：开始和目标交互"></a>主动信息收集：开始和目标交互</h2><p>被动信息收集只能帮你拿到公开线索，真正做题时，很多关键信息还是得靠你自己发请求、看响应、做枚举。</p>
+<h3 id="1-浏览器和-Burp-是最先该打开的工具"><a href="#1-浏览器和-Burp-是最先该打开的工具" class="headerlink" title="1. 浏览器和 Burp 是最先该打开的工具"></a>1. 浏览器和 Burp 是最先该打开的工具</h3><p>别一上来先跑扫描器。先手工看页面，通常更快。</p>
+<p>你至少要看这几样：</p>
+<ul>
+<li>页面源码里有没有注释、隐藏字段、被注释掉的接口</li>
+<li><code>JS</code> 里有没有接口地址、参数名、鉴权逻辑、路由路径</li>
+<li>网络请求里有没有额外接口，如 <code>/api/user</code>、<code>/graphql</code>、<code>/debug</code></li>
+<li>Cookie 里有没有明显的身份信息，如 <code>role=user</code></li>
+<li>响应头里有没有 <code>Server</code>、<code>X-Powered-By</code>、<code>Set-Cookie</code></li>
+<li>出错时有没有文件绝对路径、版本号、框架报错页</li>
+</ul>
+<p>很多题目不是靠“扫”出来的，而是靠下面这种细节看出来的：</p>
+<ul>
+<li>前端只校验长度，后端没校验</li>
+<li>页面没入口，但 <code>JS</code> 里写了接口</li>
+<li>隐藏参数 <code>debug=1</code></li>
+<li>管理员页面只是前端按钮被隐藏</li>
+<li>同一个接口对不同请求方法响应不同</li>
+</ul>
+<p>如果你能把 <code>Burp Suite</code> 和浏览器开发者工具用熟，很多 <code>CTF Web</code> 题的前期效率会直接翻倍。</p>
+<h3 id="2-目录与敏感文件枚举，是最直接的“找入口”方式"><a href="#2-目录与敏感文件枚举，是最直接的“找入口”方式" class="headerlink" title="2. 目录与敏感文件枚举，是最直接的“找入口”方式"></a>2. 目录与敏感文件枚举，是最直接的“找入口”方式</h3><p>这一部分几乎是所有 <code>Web</code> 题都会碰到的。</p>
+<p>优先检查这些路径：</p>
+<ul>
+<li><code>/robots.txt</code></li>
+<li><code>/sitemap.xml</code></li>
+<li><code>/favicon.ico</code></li>
+<li><code>/admin</code></li>
+<li><code>/login</code></li>
+<li><code>/upload</code></li>
+<li><code>/backup</code></li>
+<li><code>/test</code></li>
+<li><code>/phpinfo.php</code></li>
+<li><code>/.git/HEAD</code></li>
+<li><code>/.svn/entries</code></li>
+</ul>
+<p>再配合目录扫描工具去扩展，比如 <code>dirsearch</code>、<code>gobuster</code>、<code>ffuf</code>。</p>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">dirsearch -u http://target/ -i 200,204,301,302,307,401,403</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">gobuster <span class="built_in">dir</span> -u http://target/ -w wordlist.txt</span><br></pre></td></tr></table></figure>
+
+<p>做目录扫描时最重要的不是“扫得快”，而是“会判断结果值不值得继续”。</p>
+<p>你要重点盯这几类返回：</p>
+<ul>
+<li><code>200</code>：直接存在</li>
+<li><code>301/302</code>：可能跳到真实路径</li>
+<li><code>401</code>：有鉴权，说明后台可能真实存在</li>
+<li><code>403</code>：被禁止访问，但不代表不存在</li>
+</ul>
+<p>尤其是 <code>403</code>，新手很容易忽略。实际上，<code>403</code> 往往意味着：</p>
+<ul>
+<li>路径是真的</li>
+<li>只是当前请求方式不对</li>
+<li>或者来源、认证、IP、Header 不满足要求</li>
+</ul>
+<h3 id="3-端口扫描解决的是“站点背后还有什么”"><a href="#3-端口扫描解决的是“站点背后还有什么”" class="headerlink" title="3. 端口扫描解决的是“站点背后还有什么”"></a>3. 端口扫描解决的是“站点背后还有什么”</h3><p>如果题目给的是 IP，或者你怀疑目标不是单纯的 <code>80/443</code> 网站，就该看端口。</p>
+<p>端口扫描的目的不是为了记住一堆默认端口，而是为了推断：</p>
+<ul>
+<li>还有没有别的 Web 服务</li>
+<li>有没有后台中间件</li>
+<li>有没有数据库、缓存、消息队列误暴露</li>
+<li>有没有能配合 Web 利用的服务</li>
+</ul>
+<p>最常见的例子：</p>
+<ul>
+<li><code>80/443</code>：HTTP&#x2F;HTTPS</li>
+<li><code>8080</code>：常见备用 Web 端口</li>
+<li><code>7001/7002</code>：WebLogic</li>
+<li><code>8000/8081/8888</code>：测试站、管理台、开发服务常见</li>
+<li><code>3306</code>：MySQL</li>
+<li><code>6379</code>：Redis</li>
+<li><code>9200</code>：Elasticsearch</li>
+</ul>
+<p>在 <code>CTF Web</code> 里，看到额外端口时要立刻想三个问题：</p>
+<ol>
+<li>这是不是另一个入口。</li>
+<li>这是不是能提供版本和组件信息。</li>
+<li>这是不是能反过来帮助我利用主站。</li>
+</ol>
+<p><code>Nmap</code> 是最常见的入门工具：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmap -sV -Pn target</span><br></pre></td></tr></table></figure>
+
+<p>如果只是普通单站题，没有多端口暗示，不一定要重型扫全端口；但只要题目给的是 IP，端口扫描通常值得做。</p>
+<h3 id="4-指纹识别是在猜“这个站会栽在哪类坑里”"><a href="#4-指纹识别是在猜“这个站会栽在哪类坑里”" class="headerlink" title="4. 指纹识别是在猜“这个站会栽在哪类坑里”"></a>4. 指纹识别是在猜“这个站会栽在哪类坑里”</h3><p>指纹识别的价值不只是知道“它是 WordPress”或者“它跑了 PHP”，而是把漏洞方向缩小。</p>
+<p>你想识别的东西包括：</p>
+<ul>
+<li>Web 服务器，如 <code>Nginx</code>、<code>Apache</code></li>
+<li>后端语言，如 <code>PHP</code>、<code>Python</code>、<code>Java</code></li>
+<li>框架，如 <code>Flask</code>、<code>Django</code>、<code>Spring Boot</code></li>
+<li>CMS，如 <code>WordPress</code>、<code>Drupal</code></li>
+<li>前端框架，如 <code>Vue</code>、<code>React</code></li>
+<li>WAF 或 CDN 特征</li>
+</ul>
+<p>常见工具：</p>
+<ul>
+<li><code>WhatWeb</code></li>
+<li><code>Wappalyzer</code></li>
+<li><code>Nmap -sV</code></li>
+</ul>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">whatweb -a 3 http://target/</span><br></pre></td></tr></table></figure>
+
+<p>如果识别结果告诉你是：</p>
+<ul>
+<li><code>PHP + Apache</code>，就多想文件包含、源码泄露、弱类型、上传点</li>
+<li><code>Python Flask</code>，就多想模板注入、调试模式、签名伪造</li>
+<li><code>Java Spring</code>，就多想接口暴露、Actuator、反序列化、SpEL</li>
+<li><code>WordPress</code>，就多看插件、主题、后台路径、备份包</li>
+</ul>
+<p><code>指纹</code> 不直接等于 <code>漏洞</code>，但它能帮你少走很多错误方向。</p>
+<h3 id="5-C-段收集什么时候才重要"><a href="#5-C-段收集什么时候才重要" class="headerlink" title="5. C 段收集什么时候才重要"></a>5. C 段收集什么时候才重要</h3><p>原始材料里有 <code>C 段收集</code>，这个知识点本身没问题，但对多数单站 <code>CTF Web</code> 题来说不是最高优先级。</p>
+<p>它更适合下面这些场景：</p>
+<ul>
+<li>题目给的是一个网段</li>
+<li>靶场是内网渗透联动场景</li>
+<li>你需要从一台入口机继续发现同网段资产</li>
+<li>题目明显是“多主机、多服务”设计</li>
+</ul>
+<p>如果只是一个普通网页题，先去找参数、接口、目录、泄露，比直接扫整个网段更有效。</p>
+<h2 id="信息泄露：很多题目的真正入口"><a href="#信息泄露：很多题目的真正入口" class="headerlink" title="信息泄露：很多题目的真正入口"></a>信息泄露：很多题目的真正入口</h2><p>对新手来说，“信息泄露”最容易被低估。很多人以为它只是“顺手看一眼”，但实际上不少题目的突破口就是泄露本身。</p>
+<h3 id="1-测试页面和调试页面"><a href="#1-测试页面和调试页面" class="headerlink" title="1. 测试页面和调试页面"></a>1. 测试页面和调试页面</h3><p>优先检查：</p>
+<ul>
+<li><code>/test.php</code></li>
+<li><code>/info.php</code></li>
+<li><code>/phpinfo.php</code></li>
+<li><code>/debug</code></li>
+<li><code>/dev</code></li>
+<li><code>/install</code></li>
+<li><code>/setup</code></li>
+</ul>
+<p>其中 <code>phpinfo()</code> 页面特别危险，因为它可能直接告诉你：</p>
+<ul>
+<li>PHP 版本</li>
+<li>网站根目录</li>
+<li>Session 保存路径</li>
+<li>已加载模块</li>
+<li>服务器环境变量</li>
+<li>临时目录和上传目录</li>
+</ul>
+<p>这些信息在题目里经常可以继续转化成：</p>
+<ul>
+<li>文件包含利用</li>
+<li>上传绕过</li>
+<li>Session 相关利用</li>
+<li>已知组件漏洞定位</li>
+</ul>
+<h3 id="2-源码泄露和版本库泄露"><a href="#2-源码泄露和版本库泄露" class="headerlink" title="2. 源码泄露和版本库泄露"></a>2. 源码泄露和版本库泄露</h3><p>这部分优先级非常高。</p>
+<p>你要检查的对象包括：</p>
+<ul>
+<li><code>/.git/HEAD</code></li>
+<li><code>/.git/config</code></li>
+<li><code>/.svn/entries</code></li>
+<li>网站备份压缩包</li>
+<li>历史源码包</li>
+<li>误传的仓库目录</li>
+</ul>
+<p>常见后缀：</p>
+<ul>
+<li><code>.zip</code></li>
+<li><code>.rar</code></li>
+<li><code>.7z</code></li>
+<li><code>.tar.gz</code></li>
+<li><code>.bak</code></li>
+<li><code>.old</code></li>
+<li><code>.swp</code></li>
+<li><code>.tmp</code></li>
+</ul>
+<p>为什么源码泄露这么重要？因为它能直接回答很多做题里最难的问题：</p>
+<ul>
+<li>参数到底怎么校验</li>
+<li>后端到底查了什么数据库</li>
+<li>登录逻辑到底怎么判断权限</li>
+<li>文件上传白名单和黑名单是什么</li>
+<li>模板渲染点在哪里</li>
+<li>有哪些你在前端没看到的隐藏路由</li>
+</ul>
+<p>一句话总结：</p>
+<p><code>拿到源码后，很多 Web 题就从“猜”变成了“读”。</code></p>
+<h3 id="3-配置文件泄露"><a href="#3-配置文件泄露" class="headerlink" title="3. 配置文件泄露"></a>3. 配置文件泄露</h3><p>配置文件里常见的高价值信息包括：</p>
+<ul>
+<li>数据库账号密码</li>
+<li>Redis、MongoDB、Elasticsearch 地址</li>
+<li>JWT 密钥</li>
+<li>Session 配置</li>
+<li>第三方接口 Token</li>
+<li>Debug 开关</li>
+</ul>
+<p>常见目标文件：</p>
+<ul>
+<li><code>.env</code></li>
+<li><code>config.php</code></li>
+<li><code>application.properties</code></li>
+<li><code>application.yml</code></li>
+<li><code>web.config</code></li>
+<li><code>nginx.conf</code></li>
+<li><code>.htaccess</code></li>
+<li><code>settings.py</code></li>
+<li><code>config.yaml</code></li>
+</ul>
+<p>在 <code>CTF</code> 里，这类文件的价值经常不止是“拿凭证”，还可能让你直接发现：</p>
+<ul>
+<li>文件上传目录</li>
+<li>模板目录</li>
+<li>数据库表名</li>
+<li>管理员用户名</li>
+<li>内网服务地址</li>
+</ul>
+<h3 id="4-日志、临时文件、编辑器残留"><a href="#4-日志、临时文件、编辑器残留" class="headerlink" title="4. 日志、临时文件、编辑器残留"></a>4. 日志、临时文件、编辑器残留</h3><p>这类东西经常被忽略，但命中率不低。</p>
 <p>例如：</p>
 <ul>
-<li><code>80/443</code> 开着，说明 Web 服务对外可见</li>
-<li>后台管理端口没开放，很多攻击面自然就没了</li>
-<li>数据库端口如果只允许内网访问，外部攻击者就很难直接碰到数据库</li>
+<li>日志文件可能有报错堆栈和 SQL 语句</li>
+<li><code>.swp</code> 可能有编辑中的源码片段</li>
+<li><code>.DS_Store</code> 可能暴露目录结构</li>
+<li><code>*.log</code> 可能暴露后台接口或用户行为</li>
+<li>备份的旧文件可能没有新版本的权限校验</li>
 </ul>
-<p>所以从做题角度看，防火墙虽然不一定直接“识别 payload”，但它决定了：</p>
+<p>如果一个题看起来“主逻辑防得挺严”，那旧文件、残留文件、临时文件往往就是更容易下手的地方。</p>
+<h3 id="5-前端泄露其实非常常见"><a href="#5-前端泄露其实非常常见" class="headerlink" title="5. 前端泄露其实非常常见"></a>5. 前端泄露其实非常常见</h3><p>前端本身也是信息泄露的重要来源。</p>
+<p>重点看：</p>
 <ul>
-<li>你到底能不能连上目标</li>
-<li>你能看到哪些服务</li>
-<li>哪些横向路径一开始就被切断了</li>
+<li><code>HTML</code> 注释</li>
+<li>隐藏字段</li>
+<li>被注释掉的按钮或路由</li>
+<li><code>JS</code> 中硬编码的接口地址</li>
+<li><code>source map</code> 文件，如 <code>app.js.map</code></li>
+<li>前端写死的用户名、路径、Token、调试开关</li>
 </ul>
-<h3 id="防火墙在-CTF-Web-里常见的体现"><a href="#防火墙在-CTF-Web-里常见的体现" class="headerlink" title="防火墙在 CTF Web 里常见的体现"></a>防火墙在 CTF Web 里常见的体现</h3><p>你可能会遇到这些现象：</p>
+<p>很多题目会把线索藏在下面这种位置：</p>
 <ul>
-<li>某个端口根本连不上</li>
-<li>某个服务只有内网能访问</li>
-<li>某个路径在本地通，但从外部不通</li>
-<li>某些请求被静默丢弃，连明确报错都没有</li>
+<li><code>fetch(&quot;/api/admin/list&quot;)</code></li>
+<li><code>isAdmin === true</code></li>
+<li><code>role: &quot;guest&quot;</code></li>
+<li><code>debug: false</code></li>
+<li><code>/static/backup.zip</code></li>
 </ul>
-<p>这些时候就要想到，问题可能不在应用逻辑，而在更前面的网络边界控制。</p>
-<h2 id="WAF：专门盯-HTTP-请求"><a href="#WAF：专门盯-HTTP-请求" class="headerlink" title="WAF：专门盯 HTTP 请求"></a>WAF：专门盯 HTTP 请求</h2><p><code>WAF</code> 全称是 <code>Web Application Firewall</code>，也就是 Web 应用防火墙。</p>
-<p>如果说普通防火墙更关心“这个连接该不该过”，那 <code>WAF</code> 更关心的是：</p>
-<p><code>这个 HTTP 请求看起来像不像攻击。</code></p>
-<p>它常看的东西包括：</p>
+<p>对新手来说，一个很重要的转变是：</p>
+<p><code>不要把前端当成“样式层”，要把前端当成“情报层”。</code></p>
+<h2 id="怎么把线索转成漏洞方向"><a href="#怎么把线索转成漏洞方向" class="headerlink" title="怎么把线索转成漏洞方向"></a>怎么把线索转成漏洞方向</h2><p>真正决定你能不能做出来的，不是看到了多少信息，而是你能不能把信息和漏洞类型对应起来。</p>
+<p>下面这张映射关系很值得背熟：</p>
 <ul>
-<li>URL</li>
-<li>Query 参数</li>
-<li>POST 数据</li>
-<li>Cookie</li>
-<li>Header</li>
-<li>请求频率</li>
-<li>特定危险关键字</li>
-<li>某些已知攻击特征</li>
+<li><p>看到后台路径、管理接口、权限字段。<br>想到未授权访问、越权、弱口令、参数篡改。</p>
+</li>
+<li><p>看到上传目录、文件后缀校验、图片处理逻辑。<br>想到文件上传、解析漏洞、后缀绕过、路径穿越。</p>
+</li>
+<li><p>看到报错堆栈、SQL 报错、模板报错。<br>想到 SQL 注入、模板注入、路径泄露、源码路径定位。</p>
+</li>
+<li><p>看到 <code>.git</code>、备份包、源码片段。<br>想到读代码找鉴权缺陷、隐藏接口、硬编码密钥。</p>
+</li>
+<li><p>看到框架和版本。<br>想到已知漏洞、默认路径、默认口令、组件特征利用。</p>
+</li>
+<li><p>看到 API 文档、<code>swagger</code>、<code>graphql</code>、调试接口。<br>想到未授权接口、批量枚举、参数污染、业务逻辑缺陷。</p>
+</li>
+<li><p>看到 <code>phpinfo()</code>、环境变量、绝对路径。<br>想到文件包含、上传临时文件、Session 文件、日志文件利用。</p>
+</li>
 </ul>
-<p>所以 <code>WAF</code> 和传统防火墙最大的区别，可以简单概括成一句话：</p>
-<p><code>防火墙主要看网络层和传输层，WAF 主要盯应用层。</code></p>
-<h3 id="为什么-WAF-对-CTF-Web-特别重要"><a href="#为什么-WAF-对-CTF-Web-特别重要" class="headerlink" title="为什么 WAF 对 CTF Web 特别重要"></a>为什么 WAF 对 CTF Web 特别重要</h3><p>因为你做题时真正构造的很多东西，都在 <code>WAF</code> 的观察范围内。</p>
-<p>比如：</p>
+<p>换句话说，信息收集不是漏洞利用之前“可有可无的准备动作”，它本身就在不断缩小漏洞范围。</p>
+<h2 id="一套对新手很有用的检查清单"><a href="#一套对新手很有用的检查清单" class="headerlink" title="一套对新手很有用的检查清单"></a>一套对新手很有用的检查清单</h2><p>如果你做一题时总不知道下一步该干什么，可以按这个清单过一遍：</p>
+<h3 id="第一步：先看页面本身"><a href="#第一步：先看页面本身" class="headerlink" title="第一步：先看页面本身"></a>第一步：先看页面本身</h3><ul>
+<li>看标题、注释、源码、隐藏字段</li>
+<li>抓包看请求头、响应头、Cookie、状态码</li>
+<li>看是否有跳转、报错、版本号、路径泄露</li>
+</ul>
+<h3 id="第二步：找入口"><a href="#第二步：找入口" class="headerlink" title="第二步：找入口"></a>第二步：找入口</h3><ul>
+<li>访问 <code>robots.txt</code></li>
+<li>访问 <code>sitemap.xml</code></li>
+<li>访问常见后台和调试路径</li>
+<li>扫描目录、文件、备份后缀</li>
+</ul>
+<h3 id="第三步：找技术栈"><a href="#第三步：找技术栈" class="headerlink" title="第三步：找技术栈"></a>第三步：找技术栈</h3><ul>
+<li>看 <code>Server</code> 和 <code>X-Powered-By</code></li>
+<li>跑 <code>WhatWeb</code> 或浏览器插件</li>
+<li>从页面特征、文件扩展名、报错页判断框架</li>
+</ul>
+<h3 id="第四步：扩展攻击面"><a href="#第四步：扩展攻击面" class="headerlink" title="第四步：扩展攻击面"></a>第四步：扩展攻击面</h3><ul>
+<li>如果是域名，查子域名</li>
+<li>如果是 IP，扫端口</li>
+<li>如果是多主机题，考虑 C 段和旁站</li>
+<li>如果有项目名，去查 GitHub</li>
+</ul>
+<h3 id="第五步：盯泄露"><a href="#第五步：盯泄露" class="headerlink" title="第五步：盯泄露"></a>第五步：盯泄露</h3><ul>
+<li>看 <code>.git</code>、<code>.svn</code>、备份压缩包</li>
+<li>看测试页、<code>phpinfo.php</code>、调试页</li>
+<li>看配置文件、日志文件、临时文件</li>
+<li>看 <code>JS</code>、<code>source map</code>、接口文档</li>
+</ul>
+<h3 id="第六步：把线索转利用"><a href="#第六步：把线索转利用" class="headerlink" title="第六步：把线索转利用"></a>第六步：把线索转利用</h3><ul>
+<li>有路径就想目录穿越、文件包含、未授权</li>
+<li>有账号密码就想登录、复用、越权</li>
+<li>有源码就读鉴权、读过滤、读上传、读模板</li>
+<li>有版本就查默认特征和已知漏洞方向</li>
+</ul>
+<h2 id="新手最常见的几个误区"><a href="#新手最常见的几个误区" class="headerlink" title="新手最常见的几个误区"></a>新手最常见的几个误区</h2><ul>
+<li>只扫目录，不看返回内容。很多真正的线索在响应体里，不在状态码里。</li>
+<li>看到 <code>403</code> 就放弃。<code>403</code> 常常意味着路径真实存在。</li>
+<li>只盯首页，不看 <code>JS</code> 和接口请求。很多题目关键入口在前端脚本里。</li>
+<li>只想漏洞名，不想业务链。很多题不是“某个高危漏洞”，而是“一个小泄露加一个小逻辑缺陷”。</li>
+<li>不会读源码。拿到源码后如果还只会继续扫，那就浪费了最有价值的线索。</li>
+</ul>
+<h2 id="最后把这件事想简单一点"><a href="#最后把这件事想简单一点" class="headerlink" title="最后把这件事想简单一点"></a>最后把这件事想简单一点</h2><p>对 <code>CTF Web</code> 来说，信息收集并不神秘，它只是一个不断回答问题的过程：</p>
 <ul>
-<li>参数里出现危险函数名</li>
-<li>请求里出现典型注入特征</li>
-<li>某些上传内容像脚本</li>
-<li>某些请求头或路径像扫描器行为</li>
+<li>目标还有什么我没看到</li>
+<li>这些东西藏在哪里</li>
+<li>它们说明后端在干什么</li>
+<li>哪些信息已经不小心泄露出来了</li>
+<li>这些泄露能不能帮我打到真正的漏洞点</li>
 </ul>
-<p>这也是为什么很多人做题时会遇到这种情况：</p>
-<ul>
-<li>页面能正常打开</li>
-<li>但一发特定请求就 <code>403</code></li>
-<li>或者直接出现拦截页</li>
-<li>或者某些请求突然响应长度异常</li>
-</ul>
-<p>这时首先想到的就该是：<code>是不是 WAF 在看我的请求内容。</code></p>
-<h3 id="WAF-常见部署方式，理解到什么程度就够了"><a href="#WAF-常见部署方式，理解到什么程度就够了" class="headerlink" title="WAF 常见部署方式，理解到什么程度就够了"></a>WAF 常见部署方式，理解到什么程度就够了</h3><p>对初学者来说，最值得记的只有两件事。</p>
-<p>第一，<code>WAF</code> 往往是在 Web 服务器前面。</p>
-<p>也就是说，请求通常不是直接到达真实应用，而是先经过一层检查。</p>
-<p>第二，<code>WAF</code> 有的是真正在流量路径上，有的只是旁路看流量。</p>
-<p>这会直接影响它能做的事：</p>
-<ul>
-<li>在直路上，它可以真正拦截</li>
-<li>在旁路上，它更像监控和告警</li>
-</ul>
-<p>所以如果你看到的是“请求被挡住”，那更像前者；如果只是事后被记录或告警，那更像后者。</p>
-<h3 id="从现象上，怎么怀疑自己碰到了-WAF"><a href="#从现象上，怎么怀疑自己碰到了-WAF" class="headerlink" title="从现象上，怎么怀疑自己碰到了 WAF"></a>从现象上，怎么怀疑自己碰到了 WAF</h3><p>下面这些信号很常见：</p>
-<ul>
-<li>某些关键词一出现就 <code>403</code></li>
-<li>正常浏览没事，扫描器一跑就被拦</li>
-<li>响应页里直接写着拦截、校验、风险、访问异常</li>
-<li>访问速度或频率一高，马上出现限制</li>
-<li>某些请求返回固定模板，长度和普通页面明显不同</li>
-</ul>
-<p>这类现象在 <code>CTF Web</code> 里很常见。理解 <code>WAF</code> 的价值，不是为了背设备原理，而是为了让你意识到：</p>
-<p><code>不是所有失败，都是漏洞方向错了；有时候是应用层防御先把你拦下来了。</code></p>
-<h2 id="IDS：负责发现异常，但不一定亲自拦"><a href="#IDS：负责发现异常，但不一定亲自拦" class="headerlink" title="IDS：负责发现异常，但不一定亲自拦"></a>IDS：负责发现异常，但不一定亲自拦</h2><p><code>IDS</code> 是 <code>Intrusion Detection System</code>，也就是入侵检测系统。</p>
-<p>它的关键词是：<code>检测</code>。</p>
-<p>它主要做的事是：</p>
-<ul>
-<li>收集流量、日志、系统行为</li>
-<li>分析这些数据里有没有异常</li>
-<li>一旦发现可疑行为，发出告警、记录事件</li>
-</ul>
-<p>它更像安全团队的报警器，而不是路口的铁门。</p>
-<h3 id="为什么-IDS-常被说成“旁路设备”"><a href="#为什么-IDS-常被说成“旁路设备”" class="headerlink" title="为什么 IDS 常被说成“旁路设备”"></a>为什么 IDS 常被说成“旁路设备”</h3><p>因为很多 <code>IDS</code> 不是直接卡在业务流量正中间，而是拿流量副本、系统日志或者主机行为数据来分析。</p>
-<p>这样做的好处是：</p>
-<ul>
-<li>不容易影响正常业务</li>
-<li>部署压力相对小</li>
-<li>能持续监控</li>
-</ul>
-<p>但缺点也很明显：</p>
-<ul>
-<li>它可能知道你在攻击</li>
-<li>但它不一定能当场把你拦下来</li>
-</ul>
-<p>所以从最朴素的角度看，<code>IDS</code> 常见结果是：</p>
-<ul>
-<li>告警</li>
-<li>记录</li>
-<li>提醒管理员</li>
-</ul>
-<p>而不是直接阻断。</p>
-<h3 id="IDS-在-CTF-Web-里意味着什么"><a href="#IDS-在-CTF-Web-里意味着什么" class="headerlink" title="IDS 在 CTF Web 里意味着什么"></a>IDS 在 CTF Web 里意味着什么</h3><p>在纯题目环境里，你未必真的“看得见”一套完整 <code>IDS</code>，但你要理解这种思路，因为很多题会借它引出一些现象：</p>
-<ul>
-<li>某些异常操作虽然成功了，但后面触发了日志审计</li>
-<li>某些题目会给你日志文件，反过来让你从防守视角判断攻击行为</li>
-<li>有些靶场环境里，攻击不是被立即阻断，而是在事后留下明显痕迹</li>
-</ul>
-<p>这对做题最大的帮助是：你开始会重视 <code>日志</code>、<code>访问记录</code>、<code>行为痕迹</code> 这些东西，而不是只盯 payload 本身。</p>
-<h2 id="IPS：不仅看见你，还会立刻拦你"><a href="#IPS：不仅看见你，还会立刻拦你" class="headerlink" title="IPS：不仅看见你，还会立刻拦你"></a>IPS：不仅看见你，还会立刻拦你</h2><p><code>IPS</code> 是 <code>Intrusion Prevention System</code>，也就是入侵防御系统。</p>
-<p>它和 <code>IDS</code> 的关系很好记：</p>
-<ul>
-<li><code>IDS</code> 偏“发现问题并告警”</li>
-<li><code>IPS</code> 偏“发现问题后直接阻断”</li>
-</ul>
-<p>也可以把它理解成：</p>
-<p><code>IPS = 更主动、离实战拦截更近的 IDS。</code></p>
-<h3 id="IPS-为什么更像“带阻断能力的检测”"><a href="#IPS-为什么更像“带阻断能力的检测”" class="headerlink" title="IPS 为什么更像“带阻断能力的检测”"></a>IPS 为什么更像“带阻断能力的检测”</h3><p>因为它不仅要分析流量或行为，还要有权限在检测到异常时立刻采取动作，比如：</p>
-<ul>
-<li>丢弃数据包</li>
-<li>中断连接</li>
-<li>阻止某类请求继续发送</li>
-<li>暂时封掉攻击源</li>
-</ul>
-<p>这也是它和 <code>IDS</code> 的关键区别。</p>
-<h3 id="IPS-的代价也更高"><a href="#IPS-的代价也更高" class="headerlink" title="IPS 的代价也更高"></a>IPS 的代价也更高</h3><p>因为 <code>IPS</code> 站在真正的流量路径上，所以它虽然更能拦，但也更容易带来问题：</p>
-<ul>
-<li>性能压力更大</li>
-<li>出故障时影响更直接</li>
-<li>误报时会把正常请求一起拦掉</li>
-</ul>
-<p>这也是为什么现实部署里，<code>IPS</code> 的误报会比 <code>IDS</code> 更让人头疼。<code>IDS</code> 误报，最多是告警吵；<code>IPS</code> 误报，可能直接影响业务。</p>
-<h3 id="从做题角度，什么现象更像-IPS"><a href="#从做题角度，什么现象更像-IPS" class="headerlink" title="从做题角度，什么现象更像 IPS"></a>从做题角度，什么现象更像 IPS</h3><p>如果你遇到这些情况，可以往 <code>IPS</code> 的方向想：</p>
-<ul>
-<li>某些请求发出去后连接直接被切</li>
-<li>多次尝试后源地址临时不可用</li>
-<li>同类请求持续被主动重置</li>
-<li>不是单纯返回 <code>403</code>，而是通信层面被强行终止</li>
-</ul>
-<p>这通常说明问题已经不只是“应用返回一个错误页”了，而是更靠前、更主动的防御在工作。</p>
-<h2 id="蜜罐：它不是为了正常服务，而是为了诱捕你"><a href="#蜜罐：它不是为了正常服务，而是为了诱捕你" class="headerlink" title="蜜罐：它不是为了正常服务，而是为了诱捕你"></a>蜜罐：它不是为了正常服务，而是为了诱捕你</h2><p><code>蜜罐</code> 是这几类防御里最容易被误解的一种。</p>
-<p>很多新手第一次听到蜜罐，会以为它也是一种“更强的拦截器”。其实不是。</p>
-<p>蜜罐的目标通常不是保护真实业务本身，而是：</p>
-<ul>
-<li>吸引攻击者去碰它</li>
-<li>记录攻击者的行为</li>
-<li>拿到攻击样本、路径、工具和特征</li>
-<li>延缓攻击过程，增加攻击成本</li>
-</ul>
-<p>所以它更像一个“诱饵系统”。</p>
-<h3 id="为什么蜜罐很适合做主动防御"><a href="#为什么蜜罐很适合做主动防御" class="headerlink" title="为什么蜜罐很适合做主动防御"></a>为什么蜜罐很适合做主动防御</h3><p>因为它不是等业务系统先挨打再补救，而是主动布一个看起来有价值的目标，等攻击者自己暴露出来。</p>
-<p>它的价值主要体现在：</p>
-<ul>
-<li>误报率低</li>
-<li>捕获到的数据往往很有价值</li>
-<li>能帮助溯源和分析攻击手法</li>
-</ul>
-<p>但它也不是没有风险。如果蜜罐设计不好、隔离不好，它自己反而可能被利用成跳板。</p>
-<h3 id="蜜罐对-CTF-Web-的启发是什么"><a href="#蜜罐对-CTF-Web-的启发是什么" class="headerlink" title="蜜罐对 CTF Web 的启发是什么"></a>蜜罐对 CTF Web 的启发是什么</h3><p>即使在比赛里你不一定真的部署蜜罐，理解它依然很有用。因为它会改变你看待“目标系统”的方式。</p>
-<p>很多题目会故意放一些特别显眼的入口，比如：</p>
-<ul>
-<li>看起来过于明显的后台</li>
-<li>看起来像测试页的假目标</li>
-<li>很容易扫到但打不出结果的可疑服务</li>
-</ul>
-<p>这不一定就是蜜罐，但这种设计思路和蜜罐很像：<code>故意把攻击者往某个方向引。</code></p>
-<p>所以做题时也要保留一点警惕：</p>
-<ul>
-<li>太明显的入口，未必就是最终突破口</li>
-<li>某些东西被你发现，本身可能就是题目希望你先看见的</li>
-</ul>
-<h2 id="被动防御和主动防御，该怎么区分"><a href="#被动防御和主动防御，该怎么区分" class="headerlink" title="被动防御和主动防御，该怎么区分"></a>被动防御和主动防御，该怎么区分</h2><h3 id="被动防御"><a href="#被动防御" class="headerlink" title="被动防御"></a>被动防御</h3><p>更偏“发现、记录、过滤、修复”。</p>
-<p>典型代表：</p>
-<ul>
-<li>防火墙</li>
-<li><code>WAF</code></li>
-<li><code>IDS</code></li>
-</ul>
-<p>它们通常建立在已有规则、已知模式、已有策略上，重点是降低风险和减少损害。</p>
-<h3 id="主动防御"><a href="#主动防御" class="headerlink" title="主动防御"></a>主动防御</h3><p>更偏“提前布置、主动诱导、实时阻断、尽早止损”。</p>
-<p>典型代表：</p>
-<ul>
-<li><code>IPS</code></li>
-<li>蜜罐</li>
-</ul>
-<p>它们更强调在攻击尚未造成更大破坏前，把攻击尽快拦住、转移、限制或者暴露出来。</p>
-<p>不过你也别把这个区分看得太死。现实里很多系统是混合的，检测、阻断、诱捕、日志、告警会一起出现。</p>
-<h2 id="在-CTF-Web-里，这些防御分别会怎么影响你"><a href="#在-CTF-Web-里，这些防御分别会怎么影响你" class="headerlink" title="在 CTF Web 里，这些防御分别会怎么影响你"></a>在 CTF Web 里，这些防御分别会怎么影响你</h2><p>这一部分是整篇最值得带走的。</p>
-<p>如果你做题时遇到异常，可以先这样判断：</p>
-<h3 id="1-根本连不上，先想边界和端口"><a href="#1-根本连不上，先想边界和端口" class="headerlink" title="1. 根本连不上，先想边界和端口"></a>1. 根本连不上，先想边界和端口</h3><p>可能的方向：</p>
-<ul>
-<li>网络防火墙</li>
-<li>安全组</li>
-<li>端口未开放</li>
-<li>内外网隔离</li>
-</ul>
-<h3 id="2-页面能开，但某些-payload-一发就被拦"><a href="#2-页面能开，但某些-payload-一发就被拦" class="headerlink" title="2. 页面能开，但某些 payload 一发就被拦"></a>2. 页面能开，但某些 payload 一发就被拦</h3><p>优先想到：</p>
-<ul>
-<li><code>WAF</code></li>
-<li>参数内容过滤</li>
-<li>特征规则命中</li>
-</ul>
-<h3 id="3-请求不是返回错误页，而是连接被中断"><a href="#3-请求不是返回错误页，而是连接被中断" class="headerlink" title="3. 请求不是返回错误页，而是连接被中断"></a>3. 请求不是返回错误页，而是连接被中断</h3><p>优先想到：</p>
-<ul>
-<li><code>IPS</code></li>
-<li>更激进的前置拦截</li>
-</ul>
-<h3 id="4-题目给了日志、审计、访问记录"><a href="#4-题目给了日志、审计、访问记录" class="headerlink" title="4. 题目给了日志、审计、访问记录"></a>4. 题目给了日志、审计、访问记录</h3><p>优先想到：</p>
-<ul>
-<li><code>IDS</code></li>
-<li>主机侧或网络侧检测</li>
-<li>让你从痕迹反推攻击行为</li>
-</ul>
-<h3 id="5-目标过于“诱人”但打起来不对劲"><a href="#5-目标过于“诱人”但打起来不对劲" class="headerlink" title="5. 目标过于“诱人”但打起来不对劲"></a>5. 目标过于“诱人”但打起来不对劲</h3><p>优先想到：</p>
-<ul>
-<li>诱导入口</li>
-<li>伪目标</li>
-<li>接近蜜罐思路的题目设计</li>
-</ul>
-<p>只要你能把现象和这几个机制对上号，做题时就不会总是陷入“怎么又没回显”的慌乱状态。</p>
-<h2 id="新手最容易混淆的几个点"><a href="#新手最容易混淆的几个点" class="headerlink" title="新手最容易混淆的几个点"></a>新手最容易混淆的几个点</h2><ul>
-<li>把防火墙和 <code>WAF</code> 当成一个东西。前者更偏网络边界，后者更偏 HTTP 应用层。</li>
-<li>把 <code>IDS</code> 和 <code>IPS</code> 当成一个东西。前者偏发现和告警，后者偏实时阻断。</li>
-<li>以为蜜罐就是“更强的防火墙”。其实蜜罐的核心是诱骗和取证。</li>
-<li>一遇到 <code>403</code> 就只想到权限问题。很多时候也可能是 <code>WAF</code> 或应用层策略。</li>
-<li>一遇到连接断开就以为服务挂了。也可能是更主动的拦截设备在丢流量或切连接。</li>
-</ul>
-<h2 id="一套够用的防御视角检查清单"><a href="#一套够用的防御视角检查清单" class="headerlink" title="一套够用的防御视角检查清单"></a>一套够用的防御视角检查清单</h2><p>如果你在 <code>CTF Web</code> 里碰到请求异常、访问异常或结果异常，可以按这个顺序快速判断：</p>
-<ol>
-<li>我是根本连不上，还是连得上但请求被拦。</li>
-<li>如果根本连不上，是不是端口、网段、边界策略的问题。</li>
-<li>如果页面能访问，但特定请求被拦，是不是应用层过滤或 <code>WAF</code>。</li>
-<li>如果连接被重置或直接断开，是不是更主动的前置阻断。</li>
-<li>如果题目给了日志或审计信息，是不是在考我用防守视角还原攻击过程。</li>
-<li>如果某个入口显得过于明显，是不是题目在故意引导我先走这条路。</li>
-</ol>
-<h2 id="为什么学攻击的人也必须懂一点防御"><a href="#为什么学攻击的人也必须懂一点防御" class="headerlink" title="为什么学攻击的人也必须懂一点防御"></a>为什么学攻击的人也必须懂一点防御</h2><p>因为很多时候，理解防御不是为了“转岗做蓝队”，而是为了让你的攻击判断更准确。</p>
-<p>你知道一层防御在看什么，就会更明白：</p>
-<ul>
-<li>哪些请求容易被发现</li>
-<li>哪些异常是网络层问题，哪些是应用层问题</li>
-<li>为什么同一个 payload 在两个环境里表现不一样</li>
-<li>为什么有时漏洞明明存在，但利用就是不顺</li>
-</ul>
-<p>这也是 <code>CTF Web</code> 很重要的一种成长：从“只会打洞”，慢慢变成“能同时理解攻击链和防御链”。</p>
-<h2 id="最后把它串起来"><a href="#最后把它串起来" class="headerlink" title="最后把它串起来"></a>最后把它串起来</h2><p>如果把这篇文章压缩成最短的一句话，那就是：</p>
-<p><code>防火墙决定你能不能靠近目标，WAF 决定你的 HTTP 请求像不像攻击，IDS 决定你的异常会不会被发现，IPS 决定你会不会被当场拦下，蜜罐决定你有没有可能被故意引到一个假目标上。</code></p>
-<p>对 <code>CTF Web</code> 初学者来说，只要先把这条主线建立起来，很多以前看起来杂乱的安全名词就会突然变得很清楚。你之后再去学具体漏洞、审计代码、看拦截现象时，脑子里就会有一张更完整的地图。</p>
+<p>当你开始习惯用这条思路做题后，你会发现很多原来看起来“无从下手”的题，其实并不是没漏洞，而是你还没有把攻击面展开。</p>
+<p>如果你是刚入门，建议你先把这篇文章里的流程反复练熟。因为对绝大多数 <code>CTF Web</code> 题来说，先把信息收集做对，后面的利用往往就会顺很多。</p>
 ]]></content>
       <categories>
         <category>Web安全</category>
@@ -648,8 +1106,8 @@
       <tags>
         <tag>Web安全</tag>
         <tag>CTF</tag>
-        <tag>防御</tag>
-        <tag>WAF</tag>
+        <tag>信息收集</tag>
+        <tag>信息泄露</tag>
       </tags>
   </entry>
   <entry>
@@ -1232,464 +1690,6 @@
         <tag>CTF</tag>
         <tag>Webshell</tag>
         <tag>文件上传</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>CTF Web 信息收集与信息泄露</title>
-    <url>/2026/03/20/ctf-web-information-gathering-and-disclosure/</url>
-    <content><![CDATA[<p>很多新手做 <code>CTF Web</code> 时，最容易卡住的点不是“不会漏洞”，而是不知道该从哪里看、先看什么、看到一个线索后又该往哪条路继续走。</p>
-<p>这篇文章就只做一件事：把 <code>信息收集</code> 和 <code>信息泄露</code> 这件事讲透，而且尽量只讲对做题真正有用的部分。你可以把它理解成一条从“看到目标”到“找到入口”的路线图。</p>
-<h2 id="先建立一个做题脑图"><a href="#先建立一个做题脑图" class="headerlink" title="先建立一个做题脑图"></a>先建立一个做题脑图</h2><p>对 <code>CTF Web</code> 来说，信息收集的目标不是“知道得越多越好”，而是尽快回答下面几个问题：</p>
-<ul>
-<li>这个站点还有没有别的入口</li>
-<li>这个入口背后跑的是什么技术栈</li>
-<li>有没有隐藏页面、隐藏参数、隐藏接口</li>
-<li>有没有已经泄露出来的源码、配置、账号、路径、报错信息</li>
-<li>这些线索最终能不能转成漏洞利用点</li>
-</ul>
-<p>如果你一上来就只会盲扫目录、盲打 payload，很容易陷入“看起来很努力，但实际上没有方向”的状态。更高效的方式是按顺序走：</p>
-<ol>
-<li>先做被动信息收集，尽量不与目标产生太多交互。</li>
-<li>再做主动探测，确认入口、端口、目录、指纹和参数。</li>
-<li>最后把拿到的线索映射成具体漏洞方向。</li>
-</ol>
-<p>你可以先记住一句话：</p>
-<p><code>信息收集的本质，是把目标的攻击面从“一个网址”还原成“一整套可分析的系统”。</code></p>
-<h2 id="一条适合新手的-CTF-Web-工作流"><a href="#一条适合新手的-CTF-Web-工作流" class="headerlink" title="一条适合新手的 CTF Web 工作流"></a>一条适合新手的 CTF Web 工作流</h2><p>如果题目只给了一个站点或一个域名，我建议按下面这个顺序推进：</p>
-<ol>
-<li>浏览器访问首页，观察标题、报错、跳转、注释、脚本、请求包。</li>
-<li>看响应头、Cookie、Server、X-Powered-By、状态码、重定向位置。</li>
-<li>查常见泄露点，如 <code>robots.txt</code>、<code>sitemap.xml</code>、<code>phpinfo.php</code>、<code>.git/HEAD</code>、备份文件。</li>
-<li>做目录和文件枚举，找后台、上传点、调试页、接口文档、备份包。</li>
-<li>做指纹识别，确认语言、框架、CMS、中间件、WAF 特征。</li>
-<li>如果题目是域名而不是单站，再做子域名、GitHub、证书透明度、网络空间测绘。</li>
-<li>如果题目给的是 IP、网段或者明显是多主机场景，再考虑端口扫描和 C 段收集。</li>
-</ol>
-<p>这个顺序的核心原因很简单：<code>CTF Web</code> 题往往不是让你“扫得最全”，而是让你尽快定位“最值得打的点”。</p>
-<h2 id="被动信息收集：先把公开线索拿干净"><a href="#被动信息收集：先把公开线索拿干净" class="headerlink" title="被动信息收集：先把公开线索拿干净"></a>被动信息收集：先把公开线索拿干净</h2><p>被动信息收集的好处是快、隐蔽、成本低。在真实攻防里它能减少暴露，在 <code>CTF</code> 里它能帮你少走很多弯路。</p>
-<h3 id="1-搜索引擎不是用来搜文章的，是用来搜入口的"><a href="#1-搜索引擎不是用来搜文章的，是用来搜入口的" class="headerlink" title="1. 搜索引擎不是用来搜文章的，是用来搜入口的"></a>1. 搜索引擎不是用来搜文章的，是用来搜入口的</h3><p>搜索引擎最重要的价值，不是“搜到官网”，而是搜到那些开发者没打算给普通用户看的页面。</p>
-<p>最常用的几个语法：</p>
-<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">site:example.com</span><br><span class="line">site:example.com inurl:admin</span><br><span class="line">site:example.com intitle:login</span><br><span class="line">site:example.com filetype:pdf</span><br><span class="line">site:example.com &quot;index of&quot;</span><br><span class="line">site:example.com &quot;.git&quot;</span><br></pre></td></tr></table></figure>
-
-<p>这些语法在做题里最常拿来找下面几类东西：</p>
-<ul>
-<li>后台登录页</li>
-<li>文件索引目录</li>
-<li>文档、备份、配置文件</li>
-<li>调试页面和测试页面</li>
-<li>敏感关键词关联页面</li>
-</ul>
-<p>做题时要特别留意这几种搜索结果：</p>
-<ul>
-<li>路径名很像后台，如 <code>/admin</code>、<code>/manage</code>、<code>/console</code>、<code>/login</code></li>
-<li>页面标题暴露系统名、版本号、组件名</li>
-<li>搜到 <code>Index of</code>，说明目录浏览可能开着</li>
-<li>搜到 <code>.git</code>、<code>.svn</code>、<code>.bak</code>、<code>.zip</code>、<code>.sql</code>，优先级很高</li>
-<li>搜到 PDF、DOCX、XLSX，可能带路径、邮箱、子域名、用户名</li>
-</ul>
-<p>很多人学搜索语法时容易犯一个误区：只记语法，不知道为什么搜。真正有用的思路是反过来想：</p>
-<ul>
-<li>我想找后台，那就搜 <code>inurl:admin</code></li>
-<li>我想找泄露文件，那就搜 <code>filetype:</code> 和备份后缀</li>
-<li>我想找目录遍历，那就搜 <code>&quot;Index of&quot;</code></li>
-<li>我想找开发痕迹，那就搜系统名、项目名、框架名</li>
-</ul>
-<h3 id="2-GitHub-往往泄露的不是代码本身，而是上下文"><a href="#2-GitHub-往往泄露的不是代码本身，而是上下文" class="headerlink" title="2. GitHub 往往泄露的不是代码本身，而是上下文"></a>2. GitHub 往往泄露的不是代码本身，而是上下文</h3><p>很多 <code>CTF Web</code> 题不会直接把源码给你，但会通过各种方式让你接近源码。<code>GitHub</code> 搜索就是常见入口之一。</p>
-<p>常见搜索思路：</p>
-<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">&quot;example.com&quot;</span><br><span class="line">&quot;SECRET_KEY&quot;</span><br><span class="line">&quot;DB_PASSWORD&quot;</span><br><span class="line">&quot;access_key&quot;</span><br><span class="line">&quot;Authorization:&quot;</span><br><span class="line">org:example</span><br><span class="line">user:example</span><br><span class="line">path:/config/</span><br><span class="line">language:php</span><br><span class="line">language:python</span><br></pre></td></tr></table></figure>
-
-<p>在 <code>GitHub</code> 里你最想看到的东西不是“炫技代码”，而是下面这些：</p>
-<ul>
-<li>配置文件</li>
-<li>数据库连接串</li>
-<li>API Key、Token、Secret</li>
-<li>上传路径、静态目录、调试开关</li>
-<li>提交历史里的旧密码、旧接口、旧路径</li>
-<li>代码注释里的接口说明和业务逻辑</li>
-</ul>
-<p>对 <code>CTF Web</code> 来说，<code>GitHub</code> 线索最常带来三类收益：</p>
-<ul>
-<li>确认技术栈，比如 <code>Flask</code>、<code>Laravel</code>、<code>ThinkPHP</code>、<code>Spring Boot</code></li>
-<li>拿到敏感配置，比如数据库账号、JWT 密钥、Redis 地址</li>
-<li>找到隐藏接口和参数名，比如 <code>/api/debug</code>、<code>/upload</code>、<code>role</code>、<code>is_admin</code></li>
-</ul>
-<p>如果你已经拿到了站点名、页面标题、JS 文件名、报错堆栈中的目录名，就更应该去 <code>GitHub</code> 搜这些关键词。很多题目的“线索链”就是这样拼起来的。</p>
-<h3 id="3-网络空间测绘平台适合做“资产扩展”"><a href="#3-网络空间测绘平台适合做“资产扩展”" class="headerlink" title="3. 网络空间测绘平台适合做“资产扩展”"></a>3. 网络空间测绘平台适合做“资产扩展”</h3><p>像 <code>FOFA</code>、<code>Shodan</code>、<code>ZoomEye</code> 这类平台，本质上是在帮你回答一个问题：</p>
-<p><code>这个目标在互联网里，还暴露了哪些同类资产？</code></p>
-<p>常见检索维度包括：</p>
-<ul>
-<li><code>domain</code></li>
-<li><code>ip</code></li>
-<li><code>port</code></li>
-<li><code>title</code></li>
-<li><code>header</code></li>
-<li><code>body</code></li>
-<li><code>banner</code></li>
-<li><code>server</code></li>
-</ul>
-<p>在 <code>CTF Web</code> 中，这类平台最有价值的场景有两个：</p>
-<ul>
-<li>题目给的是域名，你怀疑还有别的子站、别的端口、别的服务</li>
-<li>题目给的是一个登录页或组件页，你想反推出系统版本和部署特征</li>
-</ul>
-<p>比如：</p>
-<figure class="highlight text"><table><tr><td class="code"><pre><span class="line">domain=&quot;example.com&quot;</span><br><span class="line">title=&quot;后台管理&quot;</span><br><span class="line">server=&quot;nginx&quot;</span><br><span class="line">body=&quot;upload&quot;</span><br><span class="line">port=&quot;8080&quot;</span><br></pre></td></tr></table></figure>
-
-<p>如果测绘平台显示同域名下还有 <code>8080</code>、<code>7001</code>、<code>8443</code> 等端口，那就说明你的攻击面可能远不止首页那个 <code>80/443</code>。</p>
-<h3 id="4-子域名收集的意义，是把“一个站”扩展成“一片站”"><a href="#4-子域名收集的意义，是把“一个站”扩展成“一片站”" class="headerlink" title="4. 子域名收集的意义，是把“一个站”扩展成“一片站”"></a>4. 子域名收集的意义，是把“一个站”扩展成“一片站”</h3><p>很多新手看到一个目标域名，就默认“所有内容都在这个域名的首页里”。这通常是错的。</p>
-<p>子域名常常意味着：</p>
-<ul>
-<li>不同业务系统</li>
-<li>不同开发团队</li>
-<li>不同权限体系</li>
-<li>不同技术栈</li>
-<li>不同安全成熟度</li>
-</ul>
-<p>举个非常常见的情况：</p>
-<ul>
-<li><code>www.example.com</code> 是正式站</li>
-<li><code>admin.example.com</code> 是后台</li>
-<li><code>api.example.com</code> 是接口</li>
-<li><code>dev.example.com</code> 是测试环境</li>
-<li><code>static.example.com</code> 放前端资源</li>
-</ul>
-<p>对于 <code>CTF Web</code>，子域名里最值得关注的往往不是“数量多”，而是下面这些名字：</p>
-<ul>
-<li><code>admin</code></li>
-<li><code>api</code></li>
-<li><code>dev</code></li>
-<li><code>test</code></li>
-<li><code>uat</code></li>
-<li><code>staging</code></li>
-<li><code>oa</code></li>
-<li><code>git</code></li>
-<li><code>upload</code></li>
-</ul>
-<p>工具上可以知道有 <code>OneForAll</code>、<code>Subfinder</code>、<code>Amass</code> 这一类，但你要明白重点不在于“我会不会某个工具”，而在于：</p>
-<ul>
-<li>发现子域名后要立刻访问</li>
-<li>看是否共用 Cookie 或单点登录</li>
-<li>看是否存在开发环境、未授权接口、调试页面</li>
-<li>看是否能从一个低权限子域影响主站</li>
-</ul>
-<p>如果是纯单站题，这一步的重要性不一定高；如果是多域名、多主机题，这一步往往直接决定你能不能进下一层。</p>
-<h2 id="主动信息收集：开始和目标交互"><a href="#主动信息收集：开始和目标交互" class="headerlink" title="主动信息收集：开始和目标交互"></a>主动信息收集：开始和目标交互</h2><p>被动信息收集只能帮你拿到公开线索，真正做题时，很多关键信息还是得靠你自己发请求、看响应、做枚举。</p>
-<h3 id="1-浏览器和-Burp-是最先该打开的工具"><a href="#1-浏览器和-Burp-是最先该打开的工具" class="headerlink" title="1. 浏览器和 Burp 是最先该打开的工具"></a>1. 浏览器和 Burp 是最先该打开的工具</h3><p>别一上来先跑扫描器。先手工看页面，通常更快。</p>
-<p>你至少要看这几样：</p>
-<ul>
-<li>页面源码里有没有注释、隐藏字段、被注释掉的接口</li>
-<li><code>JS</code> 里有没有接口地址、参数名、鉴权逻辑、路由路径</li>
-<li>网络请求里有没有额外接口，如 <code>/api/user</code>、<code>/graphql</code>、<code>/debug</code></li>
-<li>Cookie 里有没有明显的身份信息，如 <code>role=user</code></li>
-<li>响应头里有没有 <code>Server</code>、<code>X-Powered-By</code>、<code>Set-Cookie</code></li>
-<li>出错时有没有文件绝对路径、版本号、框架报错页</li>
-</ul>
-<p>很多题目不是靠“扫”出来的，而是靠下面这种细节看出来的：</p>
-<ul>
-<li>前端只校验长度，后端没校验</li>
-<li>页面没入口，但 <code>JS</code> 里写了接口</li>
-<li>隐藏参数 <code>debug=1</code></li>
-<li>管理员页面只是前端按钮被隐藏</li>
-<li>同一个接口对不同请求方法响应不同</li>
-</ul>
-<p>如果你能把 <code>Burp Suite</code> 和浏览器开发者工具用熟，很多 <code>CTF Web</code> 题的前期效率会直接翻倍。</p>
-<h3 id="2-目录与敏感文件枚举，是最直接的“找入口”方式"><a href="#2-目录与敏感文件枚举，是最直接的“找入口”方式" class="headerlink" title="2. 目录与敏感文件枚举，是最直接的“找入口”方式"></a>2. 目录与敏感文件枚举，是最直接的“找入口”方式</h3><p>这一部分几乎是所有 <code>Web</code> 题都会碰到的。</p>
-<p>优先检查这些路径：</p>
-<ul>
-<li><code>/robots.txt</code></li>
-<li><code>/sitemap.xml</code></li>
-<li><code>/favicon.ico</code></li>
-<li><code>/admin</code></li>
-<li><code>/login</code></li>
-<li><code>/upload</code></li>
-<li><code>/backup</code></li>
-<li><code>/test</code></li>
-<li><code>/phpinfo.php</code></li>
-<li><code>/.git/HEAD</code></li>
-<li><code>/.svn/entries</code></li>
-</ul>
-<p>再配合目录扫描工具去扩展，比如 <code>dirsearch</code>、<code>gobuster</code>、<code>ffuf</code>。</p>
-<p>示例：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">dirsearch -u http://target/ -i 200,204,301,302,307,401,403</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">gobuster <span class="built_in">dir</span> -u http://target/ -w wordlist.txt</span><br></pre></td></tr></table></figure>
-
-<p>做目录扫描时最重要的不是“扫得快”，而是“会判断结果值不值得继续”。</p>
-<p>你要重点盯这几类返回：</p>
-<ul>
-<li><code>200</code>：直接存在</li>
-<li><code>301/302</code>：可能跳到真实路径</li>
-<li><code>401</code>：有鉴权，说明后台可能真实存在</li>
-<li><code>403</code>：被禁止访问，但不代表不存在</li>
-</ul>
-<p>尤其是 <code>403</code>，新手很容易忽略。实际上，<code>403</code> 往往意味着：</p>
-<ul>
-<li>路径是真的</li>
-<li>只是当前请求方式不对</li>
-<li>或者来源、认证、IP、Header 不满足要求</li>
-</ul>
-<h3 id="3-端口扫描解决的是“站点背后还有什么”"><a href="#3-端口扫描解决的是“站点背后还有什么”" class="headerlink" title="3. 端口扫描解决的是“站点背后还有什么”"></a>3. 端口扫描解决的是“站点背后还有什么”</h3><p>如果题目给的是 IP，或者你怀疑目标不是单纯的 <code>80/443</code> 网站，就该看端口。</p>
-<p>端口扫描的目的不是为了记住一堆默认端口，而是为了推断：</p>
-<ul>
-<li>还有没有别的 Web 服务</li>
-<li>有没有后台中间件</li>
-<li>有没有数据库、缓存、消息队列误暴露</li>
-<li>有没有能配合 Web 利用的服务</li>
-</ul>
-<p>最常见的例子：</p>
-<ul>
-<li><code>80/443</code>：HTTP&#x2F;HTTPS</li>
-<li><code>8080</code>：常见备用 Web 端口</li>
-<li><code>7001/7002</code>：WebLogic</li>
-<li><code>8000/8081/8888</code>：测试站、管理台、开发服务常见</li>
-<li><code>3306</code>：MySQL</li>
-<li><code>6379</code>：Redis</li>
-<li><code>9200</code>：Elasticsearch</li>
-</ul>
-<p>在 <code>CTF Web</code> 里，看到额外端口时要立刻想三个问题：</p>
-<ol>
-<li>这是不是另一个入口。</li>
-<li>这是不是能提供版本和组件信息。</li>
-<li>这是不是能反过来帮助我利用主站。</li>
-</ol>
-<p><code>Nmap</code> 是最常见的入门工具：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmap -sV -Pn target</span><br></pre></td></tr></table></figure>
-
-<p>如果只是普通单站题，没有多端口暗示，不一定要重型扫全端口；但只要题目给的是 IP，端口扫描通常值得做。</p>
-<h3 id="4-指纹识别是在猜“这个站会栽在哪类坑里”"><a href="#4-指纹识别是在猜“这个站会栽在哪类坑里”" class="headerlink" title="4. 指纹识别是在猜“这个站会栽在哪类坑里”"></a>4. 指纹识别是在猜“这个站会栽在哪类坑里”</h3><p>指纹识别的价值不只是知道“它是 WordPress”或者“它跑了 PHP”，而是把漏洞方向缩小。</p>
-<p>你想识别的东西包括：</p>
-<ul>
-<li>Web 服务器，如 <code>Nginx</code>、<code>Apache</code></li>
-<li>后端语言，如 <code>PHP</code>、<code>Python</code>、<code>Java</code></li>
-<li>框架，如 <code>Flask</code>、<code>Django</code>、<code>Spring Boot</code></li>
-<li>CMS，如 <code>WordPress</code>、<code>Drupal</code></li>
-<li>前端框架，如 <code>Vue</code>、<code>React</code></li>
-<li>WAF 或 CDN 特征</li>
-</ul>
-<p>常见工具：</p>
-<ul>
-<li><code>WhatWeb</code></li>
-<li><code>Wappalyzer</code></li>
-<li><code>Nmap -sV</code></li>
-</ul>
-<p>示例：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">whatweb -a 3 http://target/</span><br></pre></td></tr></table></figure>
-
-<p>如果识别结果告诉你是：</p>
-<ul>
-<li><code>PHP + Apache</code>，就多想文件包含、源码泄露、弱类型、上传点</li>
-<li><code>Python Flask</code>，就多想模板注入、调试模式、签名伪造</li>
-<li><code>Java Spring</code>，就多想接口暴露、Actuator、反序列化、SpEL</li>
-<li><code>WordPress</code>，就多看插件、主题、后台路径、备份包</li>
-</ul>
-<p><code>指纹</code> 不直接等于 <code>漏洞</code>，但它能帮你少走很多错误方向。</p>
-<h3 id="5-C-段收集什么时候才重要"><a href="#5-C-段收集什么时候才重要" class="headerlink" title="5. C 段收集什么时候才重要"></a>5. C 段收集什么时候才重要</h3><p>原始材料里有 <code>C 段收集</code>，这个知识点本身没问题，但对多数单站 <code>CTF Web</code> 题来说不是最高优先级。</p>
-<p>它更适合下面这些场景：</p>
-<ul>
-<li>题目给的是一个网段</li>
-<li>靶场是内网渗透联动场景</li>
-<li>你需要从一台入口机继续发现同网段资产</li>
-<li>题目明显是“多主机、多服务”设计</li>
-</ul>
-<p>如果只是一个普通网页题，先去找参数、接口、目录、泄露，比直接扫整个网段更有效。</p>
-<h2 id="信息泄露：很多题目的真正入口"><a href="#信息泄露：很多题目的真正入口" class="headerlink" title="信息泄露：很多题目的真正入口"></a>信息泄露：很多题目的真正入口</h2><p>对新手来说，“信息泄露”最容易被低估。很多人以为它只是“顺手看一眼”，但实际上不少题目的突破口就是泄露本身。</p>
-<h3 id="1-测试页面和调试页面"><a href="#1-测试页面和调试页面" class="headerlink" title="1. 测试页面和调试页面"></a>1. 测试页面和调试页面</h3><p>优先检查：</p>
-<ul>
-<li><code>/test.php</code></li>
-<li><code>/info.php</code></li>
-<li><code>/phpinfo.php</code></li>
-<li><code>/debug</code></li>
-<li><code>/dev</code></li>
-<li><code>/install</code></li>
-<li><code>/setup</code></li>
-</ul>
-<p>其中 <code>phpinfo()</code> 页面特别危险，因为它可能直接告诉你：</p>
-<ul>
-<li>PHP 版本</li>
-<li>网站根目录</li>
-<li>Session 保存路径</li>
-<li>已加载模块</li>
-<li>服务器环境变量</li>
-<li>临时目录和上传目录</li>
-</ul>
-<p>这些信息在题目里经常可以继续转化成：</p>
-<ul>
-<li>文件包含利用</li>
-<li>上传绕过</li>
-<li>Session 相关利用</li>
-<li>已知组件漏洞定位</li>
-</ul>
-<h3 id="2-源码泄露和版本库泄露"><a href="#2-源码泄露和版本库泄露" class="headerlink" title="2. 源码泄露和版本库泄露"></a>2. 源码泄露和版本库泄露</h3><p>这部分优先级非常高。</p>
-<p>你要检查的对象包括：</p>
-<ul>
-<li><code>/.git/HEAD</code></li>
-<li><code>/.git/config</code></li>
-<li><code>/.svn/entries</code></li>
-<li>网站备份压缩包</li>
-<li>历史源码包</li>
-<li>误传的仓库目录</li>
-</ul>
-<p>常见后缀：</p>
-<ul>
-<li><code>.zip</code></li>
-<li><code>.rar</code></li>
-<li><code>.7z</code></li>
-<li><code>.tar.gz</code></li>
-<li><code>.bak</code></li>
-<li><code>.old</code></li>
-<li><code>.swp</code></li>
-<li><code>.tmp</code></li>
-</ul>
-<p>为什么源码泄露这么重要？因为它能直接回答很多做题里最难的问题：</p>
-<ul>
-<li>参数到底怎么校验</li>
-<li>后端到底查了什么数据库</li>
-<li>登录逻辑到底怎么判断权限</li>
-<li>文件上传白名单和黑名单是什么</li>
-<li>模板渲染点在哪里</li>
-<li>有哪些你在前端没看到的隐藏路由</li>
-</ul>
-<p>一句话总结：</p>
-<p><code>拿到源码后，很多 Web 题就从“猜”变成了“读”。</code></p>
-<h3 id="3-配置文件泄露"><a href="#3-配置文件泄露" class="headerlink" title="3. 配置文件泄露"></a>3. 配置文件泄露</h3><p>配置文件里常见的高价值信息包括：</p>
-<ul>
-<li>数据库账号密码</li>
-<li>Redis、MongoDB、Elasticsearch 地址</li>
-<li>JWT 密钥</li>
-<li>Session 配置</li>
-<li>第三方接口 Token</li>
-<li>Debug 开关</li>
-</ul>
-<p>常见目标文件：</p>
-<ul>
-<li><code>.env</code></li>
-<li><code>config.php</code></li>
-<li><code>application.properties</code></li>
-<li><code>application.yml</code></li>
-<li><code>web.config</code></li>
-<li><code>nginx.conf</code></li>
-<li><code>.htaccess</code></li>
-<li><code>settings.py</code></li>
-<li><code>config.yaml</code></li>
-</ul>
-<p>在 <code>CTF</code> 里，这类文件的价值经常不止是“拿凭证”，还可能让你直接发现：</p>
-<ul>
-<li>文件上传目录</li>
-<li>模板目录</li>
-<li>数据库表名</li>
-<li>管理员用户名</li>
-<li>内网服务地址</li>
-</ul>
-<h3 id="4-日志、临时文件、编辑器残留"><a href="#4-日志、临时文件、编辑器残留" class="headerlink" title="4. 日志、临时文件、编辑器残留"></a>4. 日志、临时文件、编辑器残留</h3><p>这类东西经常被忽略，但命中率不低。</p>
-<p>例如：</p>
-<ul>
-<li>日志文件可能有报错堆栈和 SQL 语句</li>
-<li><code>.swp</code> 可能有编辑中的源码片段</li>
-<li><code>.DS_Store</code> 可能暴露目录结构</li>
-<li><code>*.log</code> 可能暴露后台接口或用户行为</li>
-<li>备份的旧文件可能没有新版本的权限校验</li>
-</ul>
-<p>如果一个题看起来“主逻辑防得挺严”，那旧文件、残留文件、临时文件往往就是更容易下手的地方。</p>
-<h3 id="5-前端泄露其实非常常见"><a href="#5-前端泄露其实非常常见" class="headerlink" title="5. 前端泄露其实非常常见"></a>5. 前端泄露其实非常常见</h3><p>前端本身也是信息泄露的重要来源。</p>
-<p>重点看：</p>
-<ul>
-<li><code>HTML</code> 注释</li>
-<li>隐藏字段</li>
-<li>被注释掉的按钮或路由</li>
-<li><code>JS</code> 中硬编码的接口地址</li>
-<li><code>source map</code> 文件，如 <code>app.js.map</code></li>
-<li>前端写死的用户名、路径、Token、调试开关</li>
-</ul>
-<p>很多题目会把线索藏在下面这种位置：</p>
-<ul>
-<li><code>fetch(&quot;/api/admin/list&quot;)</code></li>
-<li><code>isAdmin === true</code></li>
-<li><code>role: &quot;guest&quot;</code></li>
-<li><code>debug: false</code></li>
-<li><code>/static/backup.zip</code></li>
-</ul>
-<p>对新手来说，一个很重要的转变是：</p>
-<p><code>不要把前端当成“样式层”，要把前端当成“情报层”。</code></p>
-<h2 id="怎么把线索转成漏洞方向"><a href="#怎么把线索转成漏洞方向" class="headerlink" title="怎么把线索转成漏洞方向"></a>怎么把线索转成漏洞方向</h2><p>真正决定你能不能做出来的，不是看到了多少信息，而是你能不能把信息和漏洞类型对应起来。</p>
-<p>下面这张映射关系很值得背熟：</p>
-<ul>
-<li><p>看到后台路径、管理接口、权限字段。<br>想到未授权访问、越权、弱口令、参数篡改。</p>
-</li>
-<li><p>看到上传目录、文件后缀校验、图片处理逻辑。<br>想到文件上传、解析漏洞、后缀绕过、路径穿越。</p>
-</li>
-<li><p>看到报错堆栈、SQL 报错、模板报错。<br>想到 SQL 注入、模板注入、路径泄露、源码路径定位。</p>
-</li>
-<li><p>看到 <code>.git</code>、备份包、源码片段。<br>想到读代码找鉴权缺陷、隐藏接口、硬编码密钥。</p>
-</li>
-<li><p>看到框架和版本。<br>想到已知漏洞、默认路径、默认口令、组件特征利用。</p>
-</li>
-<li><p>看到 API 文档、<code>swagger</code>、<code>graphql</code>、调试接口。<br>想到未授权接口、批量枚举、参数污染、业务逻辑缺陷。</p>
-</li>
-<li><p>看到 <code>phpinfo()</code>、环境变量、绝对路径。<br>想到文件包含、上传临时文件、Session 文件、日志文件利用。</p>
-</li>
-</ul>
-<p>换句话说，信息收集不是漏洞利用之前“可有可无的准备动作”，它本身就在不断缩小漏洞范围。</p>
-<h2 id="一套对新手很有用的检查清单"><a href="#一套对新手很有用的检查清单" class="headerlink" title="一套对新手很有用的检查清单"></a>一套对新手很有用的检查清单</h2><p>如果你做一题时总不知道下一步该干什么，可以按这个清单过一遍：</p>
-<h3 id="第一步：先看页面本身"><a href="#第一步：先看页面本身" class="headerlink" title="第一步：先看页面本身"></a>第一步：先看页面本身</h3><ul>
-<li>看标题、注释、源码、隐藏字段</li>
-<li>抓包看请求头、响应头、Cookie、状态码</li>
-<li>看是否有跳转、报错、版本号、路径泄露</li>
-</ul>
-<h3 id="第二步：找入口"><a href="#第二步：找入口" class="headerlink" title="第二步：找入口"></a>第二步：找入口</h3><ul>
-<li>访问 <code>robots.txt</code></li>
-<li>访问 <code>sitemap.xml</code></li>
-<li>访问常见后台和调试路径</li>
-<li>扫描目录、文件、备份后缀</li>
-</ul>
-<h3 id="第三步：找技术栈"><a href="#第三步：找技术栈" class="headerlink" title="第三步：找技术栈"></a>第三步：找技术栈</h3><ul>
-<li>看 <code>Server</code> 和 <code>X-Powered-By</code></li>
-<li>跑 <code>WhatWeb</code> 或浏览器插件</li>
-<li>从页面特征、文件扩展名、报错页判断框架</li>
-</ul>
-<h3 id="第四步：扩展攻击面"><a href="#第四步：扩展攻击面" class="headerlink" title="第四步：扩展攻击面"></a>第四步：扩展攻击面</h3><ul>
-<li>如果是域名，查子域名</li>
-<li>如果是 IP，扫端口</li>
-<li>如果是多主机题，考虑 C 段和旁站</li>
-<li>如果有项目名，去查 GitHub</li>
-</ul>
-<h3 id="第五步：盯泄露"><a href="#第五步：盯泄露" class="headerlink" title="第五步：盯泄露"></a>第五步：盯泄露</h3><ul>
-<li>看 <code>.git</code>、<code>.svn</code>、备份压缩包</li>
-<li>看测试页、<code>phpinfo.php</code>、调试页</li>
-<li>看配置文件、日志文件、临时文件</li>
-<li>看 <code>JS</code>、<code>source map</code>、接口文档</li>
-</ul>
-<h3 id="第六步：把线索转利用"><a href="#第六步：把线索转利用" class="headerlink" title="第六步：把线索转利用"></a>第六步：把线索转利用</h3><ul>
-<li>有路径就想目录穿越、文件包含、未授权</li>
-<li>有账号密码就想登录、复用、越权</li>
-<li>有源码就读鉴权、读过滤、读上传、读模板</li>
-<li>有版本就查默认特征和已知漏洞方向</li>
-</ul>
-<h2 id="新手最常见的几个误区"><a href="#新手最常见的几个误区" class="headerlink" title="新手最常见的几个误区"></a>新手最常见的几个误区</h2><ul>
-<li>只扫目录，不看返回内容。很多真正的线索在响应体里，不在状态码里。</li>
-<li>看到 <code>403</code> 就放弃。<code>403</code> 常常意味着路径真实存在。</li>
-<li>只盯首页，不看 <code>JS</code> 和接口请求。很多题目关键入口在前端脚本里。</li>
-<li>只想漏洞名，不想业务链。很多题不是“某个高危漏洞”，而是“一个小泄露加一个小逻辑缺陷”。</li>
-<li>不会读源码。拿到源码后如果还只会继续扫，那就浪费了最有价值的线索。</li>
-</ul>
-<h2 id="最后把这件事想简单一点"><a href="#最后把这件事想简单一点" class="headerlink" title="最后把这件事想简单一点"></a>最后把这件事想简单一点</h2><p>对 <code>CTF Web</code> 来说，信息收集并不神秘，它只是一个不断回答问题的过程：</p>
-<ul>
-<li>目标还有什么我没看到</li>
-<li>这些东西藏在哪里</li>
-<li>它们说明后端在干什么</li>
-<li>哪些信息已经不小心泄露出来了</li>
-<li>这些泄露能不能帮我打到真正的漏洞点</li>
-</ul>
-<p>当你开始习惯用这条思路做题后，你会发现很多原来看起来“无从下手”的题，其实并不是没漏洞，而是你还没有把攻击面展开。</p>
-<p>如果你是刚入门，建议你先把这篇文章里的流程反复练熟。因为对绝大多数 <code>CTF Web</code> 题来说，先把信息收集做对，后面的利用往往就会顺很多。</p>
-]]></content>
-      <categories>
-        <category>Web安全</category>
-      </categories>
-      <tags>
-        <tag>Web安全</tag>
-        <tag>CTF</tag>
-        <tag>信息收集</tag>
-        <tag>信息泄露</tag>
       </tags>
   </entry>
   <entry>
