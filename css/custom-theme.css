@@ -31,6 +31,10 @@ body {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 14%, rgba(31, 199, 182, 0.16), transparent 24%),
+    radial-gradient(circle at 84% 12%, rgba(79, 214, 160, 0.1), transparent 22%),
+    linear-gradient(180deg, #0b1d17 0%, #0d241c 52%, #10261f 100%);
 }
 
 .site-dynamic-bg > div,
@@ -162,7 +166,7 @@ body::before {
   background:
     radial-gradient(circle at 18% 22%, rgba(31, 199, 182, 0.18), transparent 28%),
     radial-gradient(circle at 80% 18%, rgba(79, 214, 160, 0.16), transparent 24%),
-    radial-gradient(circle at 62% 74%, rgba(255, 255, 255, 0.05), transparent 18%);
+    radial-gradient(circle at 62% 74%, rgba(79, 214, 160, 0.08), transparent 18%);
   filter: blur(10px);
   animation: globalAuroraShift 18s ease-in-out infinite alternate;
 }
@@ -183,6 +187,13 @@ body::after {
   background:
     radial-gradient(circle at top left, rgba(31, 199, 182, 0.18), transparent 36%),
     radial-gradient(circle at top right, rgba(79, 214, 160, 0.14), transparent 28%),
+    linear-gradient(180deg, #07110d 0%, #0a1713 48%, #0b1510 100%);
+}
+
+.dark-mode .site-dynamic-bg {
+  background:
+    radial-gradient(circle at 18% 14%, rgba(31, 199, 182, 0.18), transparent 24%),
+    radial-gradient(circle at 84% 12%, rgba(79, 214, 160, 0.12), transparent 22%),
     linear-gradient(180deg, #07110d 0%, #0a1713 48%, #0b1510 100%);
 }
 
@@ -233,6 +244,13 @@ body::after {
 
 .light-mode .site-dynamic-bg .bg-noise {
   opacity: 0.05;
+}
+
+.light-mode .site-dynamic-bg {
+  background:
+    radial-gradient(circle at 18% 14%, rgba(31, 199, 182, 0.18), transparent 24%),
+    radial-gradient(circle at 84% 12%, rgba(79, 214, 160, 0.12), transparent 22%),
+    linear-gradient(180deg, #0c1d18 0%, #0d2019 48%, #10241d 100%);
 }
 
 .light-mode .site-dynamic-bg .beam-a {
