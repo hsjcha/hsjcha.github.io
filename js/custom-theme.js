@@ -13,68 +13,6 @@
     return (safeRoot ? safeRoot : "") + "/" + safePath;
   }
 
-  function initSiteDynamicBackground() {
-    if (!document.body || document.querySelector(".site-dynamic-bg")) return;
-
-    const layer = document.createElement("div");
-    layer.className = "site-dynamic-bg";
-    layer.setAttribute("aria-hidden", "true");
-
-    const packets = [
-      { x: 8, delay: -2, dur: 16, size: 2, height: 110, opacity: 0.38 },
-      { x: 16, delay: -9, dur: 21, size: 3, height: 150, opacity: 0.24 },
-      { x: 28, delay: -4, dur: 18, size: 2, height: 96, opacity: 0.32 },
-      { x: 41, delay: -12, dur: 24, size: 2, height: 132, opacity: 0.2 },
-      { x: 54, delay: -6, dur: 17, size: 3, height: 126, opacity: 0.34 },
-      { x: 67, delay: -15, dur: 20, size: 2, height: 102, opacity: 0.26 },
-      { x: 78, delay: -7, dur: 23, size: 3, height: 158, opacity: 0.22 },
-      { x: 88, delay: -11, dur: 19, size: 2, height: 118, opacity: 0.3 }
-    ];
-
-    const runes = [
-      { text: "GET /index.php?debug=1", top: 18, left: 10, delay: -2, dur: 18 },
-      { text: "UNION SELECT flag FROM secrets", top: 34, left: 58, delay: -7, dur: 22 },
-      { text: "Burp Proxy :: Repeater :: Intruder", top: 68, left: 18, delay: -11, dur: 20 },
-      { text: "cat /flag && echo pwned", top: 78, left: 62, delay: -5, dur: 24 }
-    ];
-
-    layer.innerHTML =
-      '<div class="bg-noise"></div>' +
-      '<div class="bg-beam beam-a"></div>' +
-      '<div class="bg-beam beam-b"></div>' +
-      '<div class="bg-beam beam-c"></div>' +
-      '<div class="bg-scanline"></div>' +
-      '<div class="bg-packets"></div>' +
-      '<div class="bg-runes"></div>';
-
-    const packetWrap = layer.querySelector(".bg-packets");
-    packets.forEach((packet) => {
-      const item = document.createElement("span");
-      item.className = "packet";
-      item.style.setProperty("--x", String(packet.x));
-      item.style.setProperty("--delay", packet.delay + "s");
-      item.style.setProperty("--dur", packet.dur + "s");
-      item.style.setProperty("--size", packet.size + "px");
-      item.style.setProperty("--height", packet.height + "px");
-      item.style.setProperty("--opacity", String(packet.opacity));
-      packetWrap.appendChild(item);
-    });
-
-    const runeWrap = layer.querySelector(".bg-runes");
-    runes.forEach((rune) => {
-      const item = document.createElement("span");
-      item.className = "rune";
-      item.textContent = rune.text;
-      item.style.setProperty("--top", rune.top + "%");
-      item.style.setProperty("--left", rune.left + "%");
-      item.style.setProperty("--delay", rune.delay + "s");
-      item.style.setProperty("--dur", rune.dur + "s");
-      runeWrap.appendChild(item);
-    });
-
-    document.body.insertBefore(layer, document.body.firstChild);
-  }
-
   function initHomeShowcase() {
     const container = document.querySelector(".home-content-container");
     if (!container || container.querySelector(".home-showcase")) return;
@@ -146,7 +84,6 @@
 
     footer.dataset.refined = "true";
     footer.classList.add("is-refined");
-    footer.classList.add("single-item");
 
     const root = (window.KEEP && KEEP.theme_config && KEEP.theme_config.root) || "/";
     const themeConfig = (window.KEEP && KEEP.theme_config) || {};
@@ -154,6 +91,9 @@
     const since = themeConfig.footer && themeConfig.footer.since;
     const siteTitle =
       (themeConfig.base_info && themeConfig.base_info.title) || "HSJCHA LAB";
+    const themeVersion = themeConfig.version
+      ? "Keep v" + themeConfig.version
+      : "Keep";
 
     const copyrightInfo = footer.querySelector(".copyright-info");
     if (copyrightInfo) {
@@ -167,8 +107,8 @@
         '<span class="footer-value">' +
         '<span class="footer-strong">© ' +
         yearText +
-        " by</span>" +
-        '<a class="footer-site-link" href="' +
+        "</span>" +
+        '<a href="' +
         normalizePath(root) +
         '">' +
         siteTitle +
@@ -178,17 +118,32 @@
 
     const themeInfo = footer.querySelector(".theme-info");
     if (themeInfo) {
-      themeInfo.remove();
+      themeInfo.innerHTML =
+        '<span class="footer-label">Stack</span>' +
+        '<span class="footer-value">' +
+        '<a target="_blank" rel="noopener noreferrer" href="https://hexo.io">Hexo</a>' +
+        '<span class="footer-separator"></span>' +
+        '<a target="_blank" rel="noopener noreferrer" href="https://github.com/XPoet/hexo-theme-keep">' +
+        themeVersion +
+        "</a>" +
+        "</span>";
     }
 
     const countInfo = footer.querySelector(".count-info");
     if (countInfo) {
-      countInfo.remove();
+      const items = Array.from(countInfo.querySelectorAll(".count-item"))
+        .map((item) => item.outerHTML)
+        .join("");
+
+      countInfo.innerHTML =
+        '<span class="footer-label">Stats</span>' +
+        '<div class="footer-value footer-metrics">' +
+        items +
+        "</div>";
     }
   }
 
   function init() {
-    initSiteDynamicBackground();
     initHomeShowcase();
     initFooterRefine();
   }
