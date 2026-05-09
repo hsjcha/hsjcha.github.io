@@ -2698,14 +2698,14 @@ body::after {
 #waifu {
   left: 10px;
   right: auto;
-  bottom: 0;
+  bottom: 42px;
   z-index: 36 !important;
   transform: scale(0.78);
   transform-origin: left bottom;
 }
 
 #waifu.waifu-active {
-  bottom: 0;
+  bottom: 42px;
 }
 
 #waifu.is-free-drag {
@@ -2792,7 +2792,7 @@ html[data-live2d-ready="true"] .lab-pet-button {
 #waifu-model-picker {
   position: fixed;
   left: 18px;
-  top: 96px;
+  bottom: 10px;
   z-index: 37;
   display: inline-flex;
   align-items: center;
@@ -2851,9 +2851,9 @@ html[data-live2d-ready="true"] .lab-pet-button {
 @media (max-width: 1100px) {
   #waifu-model-picker {
     left: 14px;
-    top: 88px;
+    bottom: 8px;
     transform: scale(0.95);
-    transform-origin: left top;
+    transform-origin: left bottom;
   }
 }
 
