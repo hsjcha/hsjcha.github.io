@@ -2783,9 +2783,20 @@ html[data-live2d-ready="true"] .lab-pet-button {
 }
 
 @media (max-width: 859px) {
-  #waifu,
+  #waifu {
+    left: 4px;
+    bottom: 56px;
+    transform: scale(0.52) !important;
+    transform-origin: left bottom;
+  }
+
+  #waifu.waifu-active {
+    bottom: 56px;
+  }
+
   #waifu-toggle {
-    display: none !important;
+    left: 6px !important;
+    bottom: 18px !important;
   }
 }
 
@@ -2821,6 +2832,49 @@ html[data-live2d-ready="true"] .lab-pet-button {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 0.45rem;
+}
+
+.waifu-close-button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: rgba(210, 226, 230, 0.84);
+  font-size: 1rem;
+  line-height: 1;
+  border: 1px solid rgba(138, 200, 186, 0.18);
+  border-radius: 999px;
+  cursor: pointer;
+  background: rgba(20, 33, 42, 0.96);
+  transition: border-color 0.22s ease, background 0.22s ease, color 0.22s ease, transform 0.22s ease;
+}
+
+.waifu-close-button:hover {
+  color: rgba(232, 240, 242, 0.94);
+  border-color: rgba(181, 216, 207, 0.3);
+  transform: translateY(-1px);
+}
+
+#waifu-reopen-button {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 37;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.8rem;
+  color: #0d171d;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: 1px solid rgba(181, 216, 207, 0.34);
+  border-radius: 999px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #86c8ba, #b5d8cf);
+  box-shadow: 0 12px 24px rgba(1, 7, 11, 0.18);
+}
+
+#waifu-reopen-button:hover {
+  transform: translateY(-1px);
 }
 
 .waifu-model-button {
@@ -2859,6 +2913,34 @@ html[data-live2d-ready="true"] .lab-pet-button {
 
 @media (max-width: 859px) {
   #waifu-model-picker {
-    display: none !important;
+    left: 8px;
+    right: auto;
+    bottom: 8px;
+    gap: 0.4rem;
+    padding: 0.45rem 0.55rem;
+    transform: scale(0.86);
+    transform-origin: left bottom;
+  }
+
+  .waifu-model-picker-label {
+    display: none;
+  }
+
+  .waifu-model-button {
+    min-width: 64px;
+    padding: 0.34rem 0.58rem;
+    font-size: 0.76rem;
+  }
+
+  .waifu-close-button {
+    width: 28px;
+    height: 28px;
+  }
+
+  #waifu-reopen-button {
+    left: 8px;
+    bottom: 8px;
+    padding: 0.5rem 0.72rem;
+    font-size: 0.76rem;
   }
 }

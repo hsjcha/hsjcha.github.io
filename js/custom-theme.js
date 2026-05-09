@@ -4,6 +4,7 @@
     { value: "1", label: "Hijiki" },
     { value: "2", label: "Shizuku" },
   ];
+  const WAIFU_DISMISSED_KEY = "waifuDismissed";
 
   function normalizePath(value) {
     if (!value) return "/";
@@ -174,10 +175,6 @@
       return true;
     }
 
-    if (window.innerWidth < 860) {
-      return false;
-    }
-
     const root = (window.KEEP && KEEP.theme_config && KEEP.theme_config.root) || "/";
     const live2dBase = joinPath(root, "live2d/vendor/");
     const waifuPath = joinPath(root, "live2d/waifu-tips.json");
@@ -227,20 +224,20 @@
   }
 
   function initWaifuModelPicker() {
-    if (window.innerWidth < 860) return;
-
     let picker = document.getElementById("waifu-model-picker");
     if (!picker) {
       picker = document.createElement("div");
       picker.id = "waifu-model-picker";
       picker.innerHTML =
         '<span class="waifu-model-picker-label">看板娘</span>' +
-        '<div class="waifu-model-picker-buttons" role="tablist" aria-label="Select waifu model"></div>';
+        '<div class="waifu-model-picker-buttons" role="tablist" aria-label="Select waifu model"></div>' +
+        '<button type="button" class="waifu-close-button" aria-label="Hide waifu">×</button>';
       document.body.appendChild(picker);
     }
 
     const buttonGroup = picker.querySelector(".waifu-model-picker-buttons");
-    if (!buttonGroup) return;
+    const closeButton = picker.querySelector(".waifu-close-button");
+    if (!buttonGroup || !closeButton) return;
 
     const currentModelId = window.localStorage.getItem("modelId");
     const normalizedValue = WAIFU_MODEL_OPTIONS.some(
@@ -276,6 +273,67 @@
       button.classList.toggle("is-active", isActive);
       button.setAttribute("aria-selected", isActive ? "true" : "false");
     });
+
+    if (!closeButton.dataset.bound) {
+      closeButton.dataset.bound = "true";
+      closeButton.addEventListener("click", () => {
+        dismissWaifu();
+      });
+    }
+  }
+
+  function setWaifuVisibility(visible) {
+    const waifu = document.getElementById("waifu");
+    const picker = document.getElementById("waifu-model-picker");
+    const reopen = document.getElementById("waifu-reopen-button");
+
+    if (waifu) {
+      waifu.style.display = visible ? "" : "none";
+      if (visible) {
+        waifu.classList.add("waifu-active");
+        waifu.classList.remove("waifu-hidden");
+      }
+    }
+
+    if (picker) {
+      picker.style.display = visible ? "" : "none";
+    }
+
+    if (reopen) {
+      reopen.style.display = visible ? "none" : "inline-flex";
+    }
+  }
+
+  function dismissWaifu() {
+    window.sessionStorage.setItem(WAIFU_DISMISSED_KEY, "true");
+    setWaifuVisibility(false);
+  }
+
+  function restoreWaifu() {
+    window.sessionStorage.removeItem(WAIFU_DISMISSED_KEY);
+    setWaifuVisibility(true);
+  }
+
+  function initWaifuDismissControls() {
+    let reopenButton = document.getElementById("waifu-reopen-button");
+    if (!reopenButton) {
+      reopenButton = document.createElement("button");
+      reopenButton.id = "waifu-reopen-button";
+      reopenButton.type = "button";
+      reopenButton.setAttribute("aria-label", "Show waifu");
+      reopenButton.textContent = "看板娘";
+      document.body.appendChild(reopenButton);
+    }
+
+    if (!reopenButton.dataset.bound) {
+      reopenButton.dataset.bound = "true";
+      reopenButton.addEventListener("click", () => {
+        restoreWaifu();
+      });
+    }
+
+    const dismissed = window.sessionStorage.getItem(WAIFU_DISMISSED_KEY) === "true";
+    setWaifuVisibility(!dismissed);
   }
 
   function initWaifuDragFreedom() {
@@ -372,11 +430,14 @@
     if (!live2dReady) {
       const picker = document.getElementById("waifu-model-picker");
       if (picker) picker.remove();
+      const reopenButton = document.getElementById("waifu-reopen-button");
+      if (reopenButton) reopenButton.remove();
       initLabPet();
       return;
     }
     initWaifuModelPicker();
     initWaifuDragFreedom();
+    initWaifuDismissControls();
   }
 
   if (document.readyState === "loading") {
